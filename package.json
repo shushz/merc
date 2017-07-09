@@ -1,0 +1,7 @@
+{
+  "name": "merc",
+  "version": "0.0.0",
+  "description": "A Mercurial wrapper the makes Mercurial faster",
+  "main": "index.js",
+  "author": "Alexander Dvinsky"
+}
