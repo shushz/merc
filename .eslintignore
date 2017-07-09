@@ -1,0 +1,4 @@
+!.eslintrc.js
+/coverage/**
+/flow-typed/**
+/vendor

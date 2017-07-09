@@ -1,0 +1,6 @@
+{
+  "name": "eslint-plugin-merc-eslint",
+  "//": "NOTE: Be sure to bump version whenever this directory changes.",
+  "version": "0.0.0",
+  "private": true
+}

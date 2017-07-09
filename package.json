@@ -2,6 +2,42 @@
   "name": "merc",
   "version": "0.0.0",
   "description": "A Mercurial wrapper the makes Mercurial faster",
-  "main": "index.js",
-  "author": "Alexander Dvinsky"
+  "author": "Alexander Dvinsky",
+  "devDependencies": {
+    "babel-cli": "6.24.1",
+    "babel-core": "6.25.0",
+    "babel-eslint": "7.1.1",
+    "babel-jest": "20.0.3",
+    "babel-plugin-transform-class-properties": "6.24.1",
+    "babel-plugin-transform-es2015-modules-commonjs": "6.24.1",
+    "babel-plugin-transform-flow-strip-types": "6.22.0",
+    "babel-plugin-transform-inline-imports-commonjs": "1.2.0",
+    "babel-plugin-transform-object-rest-spread": "6.23.0",
+    "babel-watch": "2.0.6",
+    "eslint": "3.15.0",
+    "eslint-plugin-flowtype": "2.30.0",
+    "eslint-plugin-import": "2.2.0",
+    "eslint-plugin-merc-eslint": "file:eslint-plugin-merc-eslint",
+    "eslint-plugin-prefer-object-spread": "1.1.0",
+    "eslint-plugin-prettier": "2.1.2",
+    "flow-bin": "0.48.0",
+    "jest": "20.0.4",
+    "prettier": "1.5.2",
+    "split": "1.0.0"
+  },
+  "scripts": {
+    "debug": "node node_modules/babel-watch/babel-watch.js --debug 5858 src/index.js",
+    "lint": "node node_modules/.bin/eslint --max-warnings=0 .",
+    "watch": "node --trace-deprecation node_modules/babel-watch/babel-watch.js src/index.js",
+    "test": "node node_modules/.bin/jest"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "/__tests__/(fixtures|__mocks__)/",
+      "/_(temp|mock|install|init).js$"
+    ]
+  },
+  "private": true
 }

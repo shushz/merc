@@ -1,0 +1,20 @@
+[ignore]
+; ignore module source to prefer declaration
+<PROJECT_ROOT>/node_modules/rxjs/.*
+; annotated with `@flow` but containing Flow errors
+<PROJECT_ROOT>/node_modules/prettier/node_modules/jest-validate/.*
+
+[include]
+
+[libs]
+
+[options]
+experimental.const_params=true
+experimental.strict_call_arity=true
+module.use_strict=true
+suppress_comment=.*\\$FlowFixMe.*
+suppress_comment=.*\\$FlowIgnore.*
+suppress_comment=.*\\$FlowIssue.*
+
+[version]
+0.48.0

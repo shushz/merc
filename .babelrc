@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    ["babel-plugin-transform-flow-strip-types"],
+
+    ["babel-plugin-transform-class-properties"],
+    ["babel-plugin-transform-object-rest-spread", {"useBuiltIns": true}],
+
+    // Toggle these to control inline-imports:
+    // ["babel-plugin-transform-es2015-modules-commonjs"],
+    ["babel-plugin-transform-inline-imports-commonjs"],
+  ]
+}
