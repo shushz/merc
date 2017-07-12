@@ -39,5 +39,9 @@
       "/_(temp|mock|install|init).js$"
     ]
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "nuclide-commons": "^0.1.8",
+    "rxjs": "5.3.1"
+  }
 }
