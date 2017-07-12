@@ -8,5 +8,7 @@
     // Toggle these to control inline-imports:
     // ["babel-plugin-transform-es2015-modules-commonjs"],
     ["babel-plugin-transform-inline-imports-commonjs"],
+
+    ["babel-plugin-transform-async-to-generator"],
   ]
 }
