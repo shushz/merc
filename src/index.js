@@ -6,6 +6,6 @@
  * @format
  */
 
-/* eslint-disable no-console */
+/* eslint-disable no-console,merc-eslint/license-header */
 
 console.log('hello world');
