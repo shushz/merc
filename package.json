@@ -31,6 +31,9 @@
     "watch": "node --trace-deprecation node_modules/babel-watch/babel-watch.js src/index.js",
     "test": "node node_modules/.bin/jest"
   },
+  "bin": {
+    "merc": "./src/index.js"
+  },
   "jest": {
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
