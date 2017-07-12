@@ -5,10 +5,10 @@
  * @format
  */
 
-import type {Observable} from 'rxjs';
 import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
 
-import {runCommand} from 'nuclide-commons/process.js';
+import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
+import {Observable} from 'rxjs';
 
 function hg(
   subcommand: string,
@@ -22,5 +22,10 @@ function hg(
 }
 
 export function getRepoRoot(dir: string): Observable<string> {
-  return hg('root', [], {cwd: dir}).map(out => out.trim());
+  return hg('root', [], {cwd: dir}).map(out => out.trim()).catch(err => {
+    if (err instanceof ProcessExitError && err.exitCode === 255) {
+      return Observable.of(null);
+    }
+    throw err;
+  })
 }

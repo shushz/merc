@@ -10,9 +10,17 @@
 import path from 'path';
 import {getRepoRoot} from '../hgutils';
 
-test('has test', async () => {
-  const repoRoot = path.resolve(__dirname, './fixtures/repo1');
-  const dir = path.join(repoRoot, 'a/b');
-  const actual = await getRepoRoot(dir).toPromise();
-  expect(actual).toBe(repoRoot);
+describe('hgroot', () => {
+  test('it reports the root', async () => {
+    const repoRoot = path.resolve(__dirname, './fixtures/repo1');
+    const dir = path.join(repoRoot, 'a/b');
+    const actual = await getRepoRoot(dir).toPromise();
+    expect(actual).toBe(repoRoot);
+  });
+
+  test("it returns null when there's no repo", async () => {
+    const dir = path.resolve(__dirname, './fixtures/not-a-repo/a/b');
+    const actual = await getRepoRoot(dir).toPromise();
+    expect(actual).toBe(null);
+  });
 });
