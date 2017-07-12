@@ -8,4 +8,5 @@
 
 /* eslint-disable no-console,merc-eslint/license-header */
 
-console.log('hello world');
+require('babel-register');
+require('./merc');
