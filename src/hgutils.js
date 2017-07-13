@@ -69,7 +69,7 @@ export function _getSubtreeCommitList(
       '-r',
       `descendants(not public() and children(last(public() and ancestors(${hash})))) or last(public() and ancestors(${hash}))`,
       '--template',
-      '----node\n{node}\n----p1node\n{p1node}\n----current\n{ifcontains(rev, revset("."), "1\n")}----phase\n{phase}\n----file_adds\n{file_adds % "{file}\n"}----file_copies\n{file_copies % "{file}\n"}----file_dels\n{file_dels % "{file}\n"}----file_mods\n{file_mods % "{file}\n"}',
+      '----node\n{node}\n----p1node\n{p1node}\n----current\n{ifcontains(rev, revset("."), "1\n")}----phase\n{phase}\n----file_adds\n{file_adds % "{file}\n"}----file_copies\n{file_copies % "{source}\n{name}\n"}----file_dels\n{file_dels % "{file}\n"}----file_mods\n{file_mods % "{file}\n"}',
     ],
     {cwd: repoRoot},
   );
@@ -173,7 +173,12 @@ export function _parseSubtreeCommitList(
         break;
       case FILE_COPIES:
         invariant(currentNode != null);
-        currentNode.copiedFiles.add(line);
+        // Grap the dest from the next line and advance our pointer.
+        const source = line;
+        const dest = lines[i + 1];
+        i++;
+
+        currentNode.copiedFiles.add({source, dest});
         break;
       case FILE_MODS:
         invariant(currentNode != null);

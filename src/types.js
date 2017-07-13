@@ -18,6 +18,8 @@ export type FileStatus = 'modified' | 'added' | 'deleted';
 
 export type CommitPhase = 'draft' | 'public';
 
+export type Copy = {source: string, dest: string};
+
 export type AppState = {
   mainRepoPath: ?string,
   wClock: ?string,
@@ -32,7 +34,7 @@ export type RawCommitNode = {|
   isCurrentRevision: boolean,
   phase: CommitPhase,
   addedFiles: Set<string>,
-  copiedFiles: Set<string>,
+  copiedFiles: Set<Copy>,
   modifiedFiles: Set<string>,
   deletedFiles: Set<string>,
 |};
@@ -43,7 +45,7 @@ export type CommitNode = {|
   isCurrentRevision: boolean,
   phase: CommitPhase,
   addedFiles: Set<string>,
-  copiedFiles: Set<string>,
+  copiedFiles: Set<Copy>,
   modifiedFiles: Set<string>,
   deletedFiles: Set<string>,
   parent: ?CommitNode,

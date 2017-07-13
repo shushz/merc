@@ -194,8 +194,10 @@ Object {
             },
           ],
           "copiedFiles": Set {
-            "files/file4.txt",
-            "files/file5.txt",
+            Object {
+              "dest": "files/file5.txt",
+              "source": "files/file4.txt",
+            },
           },
           "deletedFiles": Set {},
           "hash": "f670616d11764c7b0869c1fe769423e8cd71c537",
@@ -209,10 +211,18 @@ Object {
         },
       ],
       "copiedFiles": Set {
-        "files/file.txt",
-        "files/file2.txt",
-        "files/file3.txt",
-        "files/file4.txt",
+        Object {
+          "dest": "files/file2.txt",
+          "source": "files/file.txt",
+        },
+        Object {
+          "dest": "files/file3.txt",
+          "source": "files/file.txt",
+        },
+        Object {
+          "dest": "files/file4.txt",
+          "source": "files/file.txt",
+        },
       },
       "deletedFiles": Set {},
       "hash": "5b29789a9466344f070ddc482eea7855d607dbf0",
