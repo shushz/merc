@@ -9,13 +9,18 @@
  * @format
  */
 
-console.log('Hello from merc');
-
 import yargs from 'yargs';
+import {getSubtree} from './hgutils';
+import {dumpSubtree} from './debug';
 
 yargs
   .usage('$0 <cmd> [args]')
   .command('break', 'Start managing current branch with merc', argv => {
     console.log('Breaking stuff');
+  })
+  .command('debug', 'Options: getSubtree', ({argv}) => {
+    if (argv._[1] === 'getSubtree') {
+      getSubtree(process.cwd()).subscribe(res => dumpSubtree(res));
+    }
   })
   .help().argv;
