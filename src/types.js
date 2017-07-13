@@ -48,3 +48,16 @@ export type RawNode = {|
   modifiedFiles: Set<string>,
   deletedFiles: Set<string>,
 |};
+
+export type Node = {|
+  hash: string,
+  parentHash: ?string,
+  isCurrentRevision: boolean,
+  phase: CommitPhase,
+  addedFiles: Set<string>,
+  copiedFiles: Set<string>,
+  modifiedFiles: Set<string>,
+  deletedFiles: Set<string>,
+  parent: ?Node,
+  children: Array<Node>,
+|};

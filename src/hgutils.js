@@ -6,7 +6,7 @@
  */
 
 import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
-import type {CommitPhase, RawNode} from './types';
+import type {CommitPhase, Node, RawNode} from './types';
 
 import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
@@ -188,4 +188,34 @@ export function _parseSubtreeCommitList(subtreeCommits: string): Set<RawNode> {
   closeNode(currentNode);
 
   return nodes;
+}
+
+export function _buildTree(rawNodes: Set<RawNode>): Node {
+  // Create a map of hashes to nodes. Later we'll mutate these nodes to set their parent and
+  // children.
+  const nodes = new Map();
+  rawNodes.forEach(rawNode => {
+    nodes.set(rawNode.hash, {
+      ...rawNode,
+      parent: null,
+      children: [],
+    });
+  });
+
+  // Set the parent and child of each node, and find the root.
+  let root;
+  nodes.forEach(node => {
+    const {parentHash} = node;
+    const parent = parentHash == null ? null : nodes.get(parentHash);
+    if (parent == null) {
+      invariant(root == null, 'Found multiple roots in tree');
+      root = node;
+      return;
+    }
+    node.parent = parent;
+    parent.children.push(node);
+  });
+
+  invariant(root != null);
+  return root;
 }
