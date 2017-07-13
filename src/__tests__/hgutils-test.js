@@ -34,7 +34,7 @@ describe('getCurrentRevisionHash', () => {
   test('it returns the current revision hash', async () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const hash = await getCurrentRevisionHash(repoRoot).toPromise();
-    expect(hash).toBe('19e0c8a7e1c0ff0099e0c642ea99cdba36e36923');
+    expect(hash).toMatchSnapshot();
   });
 });
 
@@ -42,7 +42,7 @@ describe('getMergeBaseHash', () => {
   test('it returns the current revision hash', async () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const hash = await getMergeBaseHash(repoRoot).toPromise();
-    expect(hash).toBe('c42dae43c973a141cf0f15d9bcb6f32093e1c1d2');
+    expect(hash).toMatchSnapshot();
   });
 });
 

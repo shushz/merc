@@ -64,3 +64,7 @@ files/file.txt
 ----file_mods
 "
 `;
+
+exports[`getCurrentRevisionHash it returns the current revision hash 1`] = `"19e0c8a7e1c0ff0099e0c642ea99cdba36e36923"`;
+
+exports[`getMergeBaseHash it returns the current revision hash 1`] = `"c42dae43c973a141cf0f15d9bcb6f32093e1c1d2"`;
