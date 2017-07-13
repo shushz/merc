@@ -29,6 +29,6 @@ describe('getCurrentRevisionHash', () => {
   test('it returns the current revision hash', async () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const hash = await getCurrentRevisionHash(repoRoot).toPromise();
-    expect(hash).toBe('157d5e0a87bea71b07d2122abee0178585f17648');
+    expect(hash).toBe('19e0c8a7e1c0ff0099e0c642ea99cdba36e36923');
   });
 });
