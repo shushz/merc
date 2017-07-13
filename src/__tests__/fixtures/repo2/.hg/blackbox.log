@@ -1,4 +1,0 @@
-2017/07/12 18:01:26 matthewwithanm @157d5e0a87bea71b07d2122abee0178585f17648 (10745)> id -i --debug
-2017/07/12 18:01:26 matthewwithanm @157d5e0a87bea71b07d2122abee0178585f17648 (10745)> id -i --debug exited 0 after 0.03 seconds
-2017/07/12 18:12:50 matthewwithanm @19e0c8a7e1c0ff0099e0c642ea99cdba36e36923 (15337)> id -i --debug
-2017/07/12 18:12:50 matthewwithanm @19e0c8a7e1c0ff0099e0c642ea99cdba36e36923 (15337)> id -i --debug exited 0 after 0.05 seconds
