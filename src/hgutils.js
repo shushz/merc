@@ -45,3 +45,14 @@ export function getRepoRoot(dir: string): Observable<?string> {
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
   return hg('id', ['-i', '--debug'], {cwd: repoRoot}).map(out => out.trim());
 }
+
+export function getMergeBase(
+  repoRoot: string,
+  hash: string = '.',
+): Observable<string> {
+  return hg(
+    'log',
+    ['-r', `last(public() and ancestors(${hash}))`, '--template', '{node}'],
+    {cwd: repoRoot},
+  ).map(out => out.trim());
+}

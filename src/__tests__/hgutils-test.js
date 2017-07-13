@@ -8,7 +8,7 @@
 /* eslint-env jest */
 
 import path from 'path';
-import {getRepoRoot, getCurrentRevisionHash} from '../hgutils';
+import {getRepoRoot, getCurrentRevisionHash, getMergeBase} from '../hgutils';
 
 describe('getRepoRoot', () => {
   test('it reports the root', async () => {
@@ -30,5 +30,13 @@ describe('getCurrentRevisionHash', () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const hash = await getCurrentRevisionHash(repoRoot).toPromise();
     expect(hash).toBe('19e0c8a7e1c0ff0099e0c642ea99cdba36e36923');
+  });
+});
+
+describe('getMergeBase', () => {
+  test('it returns the current revision hash', async () => {
+    const repoRoot = path.resolve(__dirname, './fixtures/repo2');
+    const hash = await getMergeBase(repoRoot).toPromise();
+    expect(hash).toBe('c42dae43c973a141cf0f15d9bcb6f32093e1c1d2');
   });
 });
