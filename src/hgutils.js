@@ -242,3 +242,18 @@ export function getSubtree(
     .map(_parseSubtreeCommitList)
     .map(_buildTree);
 }
+
+export function initRepo(root: string): Observable<void> {
+  return hg('init', [root])
+    .ignoreElements();
+}
+
+export function commit(root: string, message: string): Observable<void> {
+  return hg('commit', [-m, message], {cwd: root})
+    .ignoreElements();
+}
+
+export function setPhase(root: string, phase: CommitPhase, hash: string): Observable<void> {
+  return hg('phase', [`--${phase}`, hash], {cwd: root})
+    .ignoreElements();
+}
