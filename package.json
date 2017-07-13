@@ -46,6 +46,7 @@
   "private": true,
   "dependencies": {
     "babel-plugin-transform-async-to-generator": "^6.24.1",
+    "fb-watchman": "^2.0.0",
     "nuclide-commons": "^0.1.8",
     "rxjs": "5.3.1",
     "yargs": "^8.0.2"
