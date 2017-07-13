@@ -24,7 +24,7 @@ function hg(
 ): Observable<string> {
   return runCommand('hg', [subcommand, ...args], {
     ...options,
-    env: {...process.env, ...options.env, HGRCPATH: '', HGPLAIN: '1'},
+    env: {...process.env, ...options.env, HGPLAIN: '1'},
   }).catch(err => {
     if (err instanceof ProcessExitError && err.exitCode === 255) {
       throw new NotARepositoryError();
