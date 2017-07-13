@@ -9,7 +9,7 @@
  * @format
  */
 
-import type {CommitNode} from './hgutils';
+import type {CommitNode} from './hgUtils';
 
 function _decircleNode(node: CommitNode): Object {
   const children = node.children.map(child => _decircleNode(child));

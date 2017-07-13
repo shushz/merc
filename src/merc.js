@@ -10,7 +10,7 @@
  */
 
 import yargs from 'yargs';
-import {getSubtree} from './hgutils';
+import {getSubtree} from './hgUtils';
 import {dumpSubtree} from './debug';
 
 yargs
