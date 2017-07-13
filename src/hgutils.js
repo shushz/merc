@@ -6,7 +6,9 @@
  */
 
 import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
+import type {CommitPhase, RawNode} from './types';
 
+import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
 import {Observable} from 'rxjs';
 
@@ -71,4 +73,121 @@ export function _getSubtreeCommitList(
     ],
     {cwd: repoRoot},
   );
+}
+
+const NODE = 'node';
+const P1_NODE = 'p1node';
+const CURRENT = 'current';
+const PHASE = 'phase';
+const FILE_ADDS = 'file_adds';
+const FILE_COPIES = 'file_copies';
+const FILE_DELS = 'file_dels';
+const FILE_MODS = 'file_mods';
+
+// The sections, in the order that they appear in the log output.
+const SUBTREE_COMMIT_LIST_SECTIONS = [
+  NODE,
+  P1_NODE,
+  CURRENT,
+  PHASE,
+  FILE_ADDS,
+  FILE_COPIES,
+  FILE_DELS,
+  FILE_MODS,
+];
+
+/**
+ * Parse the `_getSubtreeCommitList` into a Map of raw nodes.
+ */
+export function _parseSubtreeCommitList(
+  subtreeCommits: string,
+): Map<string, RawNode> {
+  const lines = subtreeCommits.trim().split('\n');
+  let currentSection = null;
+  let nextSectionIndex = 0;
+  let currentNode: ?RawNode = null;
+  let hashesToNodes: Map<string, RawNode> = new Map();
+  let foundCurrentRevision = false;
+
+  const closeNode = node => {
+    if (node != null) {
+      hashesToNodes.set(node.hash, node);
+      currentNode = null;
+    }
+  };
+
+  for (var i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Identify section markers.
+    const section = SUBTREE_COMMIT_LIST_SECTIONS[nextSectionIndex];
+    const nextSectionMarker = `----${section}`;
+    if (line === nextSectionMarker) {
+      // At the next node? Close the previous one.
+      if (section === NODE) {
+        closeNode(currentNode);
+      }
+      currentSection = section;
+      nextSectionIndex =
+        (nextSectionIndex + 1) % SUBTREE_COMMIT_LIST_SECTIONS.length;
+      continue;
+    }
+
+    switch (currentSection) {
+      case NODE:
+        // We've got the hash! Create a new node.
+        currentNode = {
+          hash: line,
+          parentHash: null,
+          phase: 'draft',
+          isCurrentRevision: false,
+          addedFiles: new Set(),
+          copiedFiles: new Set(),
+          modifiedFiles: new Set(),
+          deletedFiles: new Set(),
+        };
+        break;
+      case P1_NODE:
+        // We've got the parent hash!
+        invariant(currentNode != null);
+        currentNode.parentHash = line;
+        break;
+      case CURRENT:
+        // If there's a line for this, it's the current node.
+        invariant(currentNode != null);
+        invariant(
+          !foundCurrentRevision,
+          'Multiple revisions were marked current.',
+        );
+        currentNode.isCurrentRevision = true;
+        foundCurrentRevision = true;
+        break;
+      case PHASE:
+        invariant(currentNode != null);
+        invariant(line === 'draft' || line === 'public');
+        currentNode.phase = line;
+        break;
+      case FILE_ADDS:
+        invariant(currentNode != null);
+        currentNode.addedFiles.add(line);
+        break;
+      case FILE_COPIES:
+        invariant(currentNode != null);
+        currentNode.copiedFiles.add(line);
+        break;
+      case FILE_MODS:
+        invariant(currentNode != null);
+        currentNode.modifiedFiles.add(line);
+        break;
+      case FILE_DELS:
+        invariant(currentNode != null);
+        currentNode.deletedFiles.add(line);
+        break;
+    }
+  }
+
+  // Close the last node.
+  closeNode(currentNode);
+
+  return hashesToNodes;
 }

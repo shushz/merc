@@ -16,12 +16,18 @@ export type RepoState = {
 
 export type FileStatus = 'modified' | 'added' | 'deleted';
 
+export type CommitPhase = 'draft' | 'public';
+
 export type MercBranch = {
   mainRev: ?string,
-  mainParent: ?string,
+  mainParent: ?MercBranch,
   shadowRev: ?string,
   shadowParent: ?string,
-  files: Map<string, FileStatus>,
+  addedFiles: Set<string>,
+  copiedFiles: Set<string>,
+  modifiedFiles: Set<string>,
+  deletedFiles: Set<string>,
+  children: Array<MercBranch>,
 };
 
 export type AppState = {
@@ -31,3 +37,14 @@ export type AppState = {
   shadowRepoState: ?RepoState,
   branches: Array<MercBranch>,
 };
+
+export type RawNode = {|
+  hash: string,
+  parentHash: ?string,
+  isCurrentRevision: boolean,
+  phase: CommitPhase,
+  addedFiles: Set<string>,
+  copiedFiles: Set<string>,
+  modifiedFiles: Set<string>,
+  deletedFiles: Set<string>,
+|};

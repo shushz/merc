@@ -65,6 +65,71 @@ files/file.txt
 "
 `;
 
+exports[`_parseSubtreeCommitList it returns a map of commits 1`] = `
+Map {
+  "47b65c76f24ae1897b7f54dca6a2d210caf78ec5" => Object {
+    "addedFiles": Set {},
+    "copiedFiles": Set {},
+    "deletedFiles": Set {},
+    "hash": "47b65c76f24ae1897b7f54dca6a2d210caf78ec5",
+    "isCurrentRevision": false,
+    "modifiedFiles": Set {
+      "files/file.txt",
+    },
+    "parentHash": "c42dae43c973a141cf0f15d9bcb6f32093e1c1d2",
+    "phase": "draft",
+  },
+  "6cc8d78c03a1ec393229a4d93fd013ca68baf2d7" => Object {
+    "addedFiles": Set {},
+    "copiedFiles": Set {},
+    "deletedFiles": Set {},
+    "hash": "6cc8d78c03a1ec393229a4d93fd013ca68baf2d7",
+    "isCurrentRevision": false,
+    "modifiedFiles": Set {
+      "files/file.txt",
+    },
+    "parentHash": "47b65c76f24ae1897b7f54dca6a2d210caf78ec5",
+    "phase": "draft",
+  },
+  "19e0c8a7e1c0ff0099e0c642ea99cdba36e36923" => Object {
+    "addedFiles": Set {},
+    "copiedFiles": Set {},
+    "deletedFiles": Set {},
+    "hash": "19e0c8a7e1c0ff0099e0c642ea99cdba36e36923",
+    "isCurrentRevision": true,
+    "modifiedFiles": Set {
+      "files/file.txt",
+    },
+    "parentHash": "47b65c76f24ae1897b7f54dca6a2d210caf78ec5",
+    "phase": "draft",
+  },
+  "260b695f01aa8d351bcda32830c174d8550cbfa1" => Object {
+    "addedFiles": Set {},
+    "copiedFiles": Set {},
+    "deletedFiles": Set {},
+    "hash": "260b695f01aa8d351bcda32830c174d8550cbfa1",
+    "isCurrentRevision": false,
+    "modifiedFiles": Set {
+      "files/file.txt",
+    },
+    "parentHash": "19e0c8a7e1c0ff0099e0c642ea99cdba36e36923",
+    "phase": "draft",
+  },
+  "c42dae43c973a141cf0f15d9bcb6f32093e1c1d2" => Object {
+    "addedFiles": Set {
+      "files/file.txt",
+    },
+    "copiedFiles": Set {},
+    "deletedFiles": Set {},
+    "hash": "c42dae43c973a141cf0f15d9bcb6f32093e1c1d2",
+    "isCurrentRevision": false,
+    "modifiedFiles": Set {},
+    "parentHash": "bf2cf6e87a72ec7062e38e695bfb1151a4f63a9e",
+    "phase": "public",
+  },
+}
+`;
+
 exports[`getCurrentRevisionHash it returns the current revision hash 1`] = `"19e0c8a7e1c0ff0099e0c642ea99cdba36e36923"`;
 
 exports[`getMergeBaseHash it returns the current revision hash 1`] = `"c42dae43c973a141cf0f15d9bcb6f32093e1c1d2"`;

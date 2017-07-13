@@ -7,12 +7,14 @@
 
 /* eslint-env jest */
 
+import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import {
   getRepoRoot,
   getCurrentRevisionHash,
   getMergeBaseHash,
   _getSubtreeCommitList,
+  _parseSubtreeCommitList,
 } from '../hgutils';
 
 describe('getRepoRoot', () => {
@@ -51,5 +53,13 @@ describe('_getSubtreeCommitList', () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const list = await _getSubtreeCommitList(repoRoot).toPromise();
     expect(list).toMatchSnapshot();
+  });
+});
+
+describe('_parseSubtreeCommitList', () => {
+  test('it returns a map of commits', async () => {
+    const listPath = path.resolve(__dirname, './fixtures/subtree-list.txt');
+    const list = (await fsPromise.readFile(listPath)).toString();
+    expect(_parseSubtreeCommitList(list)).toMatchSnapshot();
   });
 });
