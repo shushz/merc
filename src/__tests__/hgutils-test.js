@@ -10,7 +10,7 @@
 import path from 'path';
 import {getRepoRoot} from '../hgutils';
 
-describe('hgroot', () => {
+describe('getRepoRoot', () => {
   test('it reports the root', async () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo1');
     const dir = path.join(repoRoot, 'a/b');
