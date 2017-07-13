@@ -45,7 +45,7 @@ export type WatchmanResult = {|
 
 export function getClock(path: string): Observable<string> {
   return runCommand(['clock', path]).map(
-    response => (response: WatchmanClockResponse).clock,
+    response => ((response: any): WatchmanClockResponse).clock,
   );
 }
 
@@ -53,8 +53,6 @@ export function getChanges(
   path: string,
   sinceClock: string,
 ): Observable<WatchmanResult> {
-  const subj = new ReplaySubject(1);
-
   return runCommand([
     'query',
     path,
@@ -86,8 +84,6 @@ export function getChanges(
 
     return {clock, overflown, filesAdded, filesDeleted, filesModified};
   });
-
-  return subj;
 }
 
 export function endWatchman(): void {
