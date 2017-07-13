@@ -21,7 +21,7 @@ function hg(
   });
 }
 
-export function getRepoRoot(dir: string): Observable<string> {
+export function getRepoRoot(dir: string): Observable<?string> {
   return hg('root', [], {cwd: dir}).map(out => out.trim()).catch(err => {
     if (err instanceof ProcessExitError && err.exitCode === 255) {
       return Observable.of(null);
