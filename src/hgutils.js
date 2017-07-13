@@ -46,7 +46,7 @@ export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
   return hg('id', ['-i', '--debug'], {cwd: repoRoot}).map(out => out.trim());
 }
 
-export function getMergeBase(
+export function getMergeBaseHash(
   repoRoot: string,
   hash: string = '.',
 ): Observable<string> {
