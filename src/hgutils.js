@@ -56,3 +56,19 @@ export function getMergeBaseHash(
     {cwd: repoRoot},
   ).map(out => out.trim());
 }
+
+export function _getSubtreeCommitList(
+  repoRoot: string,
+  hash: string = '.',
+): Observable<string> {
+  return hg(
+    'log',
+    [
+      '-r',
+      `descendants(not public() and children(last(public() and ancestors(${hash})))) or last(public() and ancestors(${hash}))`,
+      '--template',
+      '----node\n{node}\n----p1node\n{p1node}\n----current\n{ifcontains(rev, revset("."), "1\n")}----phase\n{phase}\n----file_adds\n{file_adds % "{file}\n"}----file_copies\n{file_copies % "{file}\n"}----file_dels\n{file_dels % "{file}\n"}----file_mods\n{file_mods % "{file}\n"}',
+    ],
+    {cwd: repoRoot},
+  );
+}

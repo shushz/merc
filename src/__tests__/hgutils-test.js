@@ -12,6 +12,7 @@ import {
   getRepoRoot,
   getCurrentRevisionHash,
   getMergeBaseHash,
+  _getSubtreeCommitList,
 } from '../hgutils';
 
 describe('getRepoRoot', () => {
@@ -42,5 +43,13 @@ describe('getMergeBaseHash', () => {
     const repoRoot = path.resolve(__dirname, './fixtures/repo2');
     const hash = await getMergeBaseHash(repoRoot).toPromise();
     expect(hash).toBe('c42dae43c973a141cf0f15d9bcb6f32093e1c1d2');
+  });
+});
+
+describe('_getSubtreeCommitList', () => {
+  test('it returns a list of commits with metadata', async () => {
+    const repoRoot = path.resolve(__dirname, './fixtures/repo2');
+    const list = await _getSubtreeCommitList(repoRoot).toPromise();
+    expect(list).toMatchSnapshot();
   });
 });
