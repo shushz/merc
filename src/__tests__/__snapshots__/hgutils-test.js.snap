@@ -148,9 +148,7 @@ exports[`getMergeBaseHash it returns the current revision hash 1`] = `"c42dae43c
 
 exports[`getSubtree 1`] = `
 Object {
-  "addedFiles": Set {
-    "files/file.txt",
-  },
+  "addedFiles": Set {},
   "children": Array [
     Object {
       "addedFiles": Set {

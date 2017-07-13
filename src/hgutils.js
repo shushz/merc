@@ -224,6 +224,13 @@ export function _buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   });
 
   invariant(root != null);
+
+  // We don't actually care about the root's changes since we're looking at it in isolation.
+  root.addedFiles = new Set();
+  root.copiedFiles = new Set();
+  root.modifiedFiles = new Set();
+  root.deletedFiles = new Set();
+
   return root;
 }
 
