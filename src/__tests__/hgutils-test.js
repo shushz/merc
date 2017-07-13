@@ -14,6 +14,7 @@ import {
   getRepoRoot,
   getCurrentRevisionHash,
   getMergeBaseHash,
+  getSubtree,
   _getSubtreeCommitList,
   _parseSubtreeCommitList,
 } from '../hgutils';
@@ -132,4 +133,10 @@ test('_buildTree', () => {
     root.children[0],
     root.children[0],
   ]);
+});
+
+test('getSubtree', async () => {
+  const repoRoot = path.resolve(__dirname, './fixtures/repo2');
+  const subtree = await getSubtree(repoRoot).toPromise();
+  expect(subtree).toMatchSnapshot();
 });

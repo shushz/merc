@@ -221,3 +221,12 @@ export function _buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   invariant(root != null);
   return root;
 }
+
+export function getSubtree(
+  repoRoot: string,
+  hash: string = '.',
+): Observable<CommitNode> {
+  return _getSubtreeCommitList(repoRoot, hash)
+    .map(_parseSubtreeCommitList)
+    .map(_buildTree);
+}
