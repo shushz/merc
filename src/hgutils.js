@@ -6,7 +6,7 @@
  */
 
 import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
-import type {CommitPhase, Node, RawNode} from './types';
+import type {CommitPhase, CommitNode, RawCommitNode} from './types';
 
 import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
@@ -99,12 +99,14 @@ const SUBTREE_COMMIT_LIST_SECTIONS = [
 /**
  * Parse the `_getSubtreeCommitList` into a Map of raw nodes.
  */
-export function _parseSubtreeCommitList(subtreeCommits: string): Set<RawNode> {
+export function _parseSubtreeCommitList(
+  subtreeCommits: string,
+): Set<RawCommitNode> {
   const lines = subtreeCommits.trim().split('\n');
   let currentSection = null;
   let nextSectionIndex = 0;
-  let currentNode: ?RawNode = null;
-  let nodes: Set<RawNode> = new Set();
+  let currentNode: ?RawCommitNode = null;
+  let nodes: Set<RawCommitNode> = new Set();
   let foundCurrentRevision = false;
 
   const closeNode = node => {
@@ -190,7 +192,7 @@ export function _parseSubtreeCommitList(subtreeCommits: string): Set<RawNode> {
   return nodes;
 }
 
-export function _buildTree(rawNodes: Set<RawNode>): Node {
+export function _buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   // Create a map of hashes to nodes. Later we'll mutate these nodes to set their parent and
   // children.
   const nodes = new Map();

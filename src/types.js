@@ -38,7 +38,7 @@ export type AppState = {
   branches: Array<MercBranch>,
 };
 
-export type RawNode = {|
+export type RawCommitNode = {|
   hash: string,
   parentHash: ?string,
   isCurrentRevision: boolean,
@@ -49,7 +49,7 @@ export type RawNode = {|
   deletedFiles: Set<string>,
 |};
 
-export type Node = {|
+export type CommitNode = {|
   hash: string,
   parentHash: ?string,
   isCurrentRevision: boolean,
@@ -58,6 +58,6 @@ export type Node = {|
   copiedFiles: Set<string>,
   modifiedFiles: Set<string>,
   deletedFiles: Set<string>,
-  parent: ?Node,
-  children: Array<Node>,
+  parent: ?CommitNode,
+  children: Array<CommitNode>,
 |};
