@@ -41,3 +41,7 @@ export function getRepoRoot(dir: string): Observable<?string> {
     throw err;
   });
 }
+
+export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
+  return hg('id', ['-i', '--debug'], {cwd: repoRoot}).map(out => out.trim());
+}
