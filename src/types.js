@@ -18,24 +18,12 @@ export type FileStatus = 'modified' | 'added' | 'deleted';
 
 export type CommitPhase = 'draft' | 'public';
 
-export type MercBranch = {
-  mainRev: ?string,
-  mainParent: ?MercBranch,
-  shadowRev: ?string,
-  shadowParent: ?string,
-  addedFiles: Set<string>,
-  copiedFiles: Set<string>,
-  modifiedFiles: Set<string>,
-  deletedFiles: Set<string>,
-  children: Array<MercBranch>,
-};
-
 export type AppState = {
   mainRepoPath: ?string,
   wClock: ?string,
   mainRepoState: ?RepoState,
   shadowRepoState: ?RepoState,
-  branches: Array<MercBranch>,
+  branches: Array<CommitNode>,
 };
 
 export type RawCommitNode = {|
