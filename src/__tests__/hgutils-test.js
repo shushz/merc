@@ -57,7 +57,7 @@ describe('_getSubtreeCommitList', () => {
 });
 
 describe('_parseSubtreeCommitList', () => {
-  test('it returns a map of commits', async () => {
+  test('it returns a set of commits', async () => {
     const listPath = path.resolve(__dirname, './fixtures/subtree-list.txt');
     const list = (await fsPromise.readFile(listPath)).toString();
     expect(_parseSubtreeCommitList(list)).toMatchSnapshot();

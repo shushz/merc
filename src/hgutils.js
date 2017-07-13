@@ -99,19 +99,17 @@ const SUBTREE_COMMIT_LIST_SECTIONS = [
 /**
  * Parse the `_getSubtreeCommitList` into a Map of raw nodes.
  */
-export function _parseSubtreeCommitList(
-  subtreeCommits: string,
-): Map<string, RawNode> {
+export function _parseSubtreeCommitList(subtreeCommits: string): Set<RawNode> {
   const lines = subtreeCommits.trim().split('\n');
   let currentSection = null;
   let nextSectionIndex = 0;
   let currentNode: ?RawNode = null;
-  let hashesToNodes: Map<string, RawNode> = new Map();
+  let nodes: Set<RawNode> = new Set();
   let foundCurrentRevision = false;
 
   const closeNode = node => {
     if (node != null) {
-      hashesToNodes.set(node.hash, node);
+      nodes.add(node);
       currentNode = null;
     }
   };
@@ -189,5 +187,5 @@ export function _parseSubtreeCommitList(
   // Close the last node.
   closeNode(currentNode);
 
-  return hashesToNodes;
+  return nodes;
 }
