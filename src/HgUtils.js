@@ -43,7 +43,7 @@ function hg(
   });
 }
 
-export function getRepoRoot(dir?: string): Observable<?string> {
+export function getRepoRoot(dir?: string): Observable<string> {
   return hg('root', [], {cwd: dir}).map(out => out.trim());
 }
 
