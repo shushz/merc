@@ -90,9 +90,7 @@ function loadSerializedState(
     });
 }
 
-export function writeSerializedState(
-  state: InitializedAppState,
-): Observable<empty> {
+export function saveState(state: InitializedAppState): Observable<empty> {
   const {shadowRepoRoot} = state;
   const serializationPath = getSerializationPath(shadowRepoRoot);
   const serialized = serialize(state);
