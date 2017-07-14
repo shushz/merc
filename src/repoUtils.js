@@ -83,11 +83,7 @@ function hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
     })
     .filter(entry => entry.exists)
     .map(entry => entry.name)
-    .reduce((set, name) => {
-      const copy = new Set(set);
-      copy.add(name);
-      return copy;
-    }, new Set());
+    .reduce((set, name) => new Set([...set, name]), new Set());
 }
 
 function mkDirs(root: string, paths: Set<string>): Observable<empty> {
@@ -102,11 +98,9 @@ function mkDirs(root: string, paths: Set<string>): Observable<empty> {
 function makePublicCommit(root: string, message: string): Observable<empty> {
   return add(root, '.')
     .concat(commit(root, message))
-    .concat(
-      getCurrentRevisionHash(root).switchMap(hash =>
-        setPhase(root, 'public', hash),
-      ),
-    )
+    .ignoreElements()
+    .concat(getCurrentRevisionHash(root))
+    .switchMap(hash => setPhase(root, 'public', hash))
     .ignoreElements();
 }
 
