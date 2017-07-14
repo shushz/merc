@@ -17,18 +17,25 @@ import {
   setPhase,
 } from './HgUtils';
 
+export const MERC_PREFIX = resolve('.hg', 'merc');
+
+export function mercRepoPath(repoPath: string): string {
+  return resolve(repoPath, '.hg', 'merc');
+}
+
 export function initShadowRepo(
   repoPath: string,
   baseFiles: Set<string>,
 ): Observable<string> {
-  const shadowRoot = resolve(repoPath, '.hg', 'merc');
+  const shadowRoot = mercRepoPath(repoPath);
   const paths = pathSetOfFiles(baseFiles);
 
   return initRepo(shadowRoot)
     .concat(copyIfExists(repoPath, shadowRoot, resolve('.hg', 'hgrc')))
     .concat(mkDirs(shadowRoot, paths))
-    .concat(copyHgIgnores(repoPath, shadowRoot, paths))
+    .concat(writeEmptyHgIgnore(shadowRoot))
     .concat(makePublicCommit(shadowRoot, 'Initial commit'))
+    .concat(copyHgIgnores(repoPath, shadowRoot, paths))
     .concat(copyBaseFiles(repoPath, shadowRoot, baseFiles))
     .concat(makePublicCommit(shadowRoot, 'MergeBase commit'))
     .ignoreElements()
@@ -52,6 +59,12 @@ function copyIfExists(
     .ignoreElements();
 }
 
+function writeEmptyHgIgnore(targetRepo: string): Observable<empty> {
+  return Observable.defer(() =>
+    fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
+  ).ignoreElements();
+}
+
 function copyHgIgnores(
   sourceRepo: string,
   targetRepo: string,
@@ -59,10 +72,6 @@ function copyHgIgnores(
 ): Observable<empty> {
   return hgIgnores(sourceRepo, paths)
     .switchMap(ignores => {
-      if (ignores.size === 0) {
-        return fsPromise.writeFile(resolve(targetRepo, '.hgignore'), '');
-      }
-
       return Observable.from(ignores).mergeMap(name =>
         copyIfExists(sourceRepo, targetRepo, name),
       );
@@ -70,7 +79,10 @@ function copyHgIgnores(
     .ignoreElements();
 }
 
-function hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
+export function hgIgnores(
+  root: string,
+  paths: Set<string>,
+): Observable<Set<string>> {
   return Observable.from(paths)
     .mergeMap(async path => {
       const name = resolve(path, '.hgignore');
