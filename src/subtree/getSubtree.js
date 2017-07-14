@@ -32,6 +32,15 @@ const SUBTREE_COMMIT_LIST_SECTIONS = [
   FILE_MODS,
 ];
 
+export default function getSubtree(
+  repoRoot: string,
+  hash: string = '.',
+): Observable<CommitNode> {
+  return getSubtreeCommitList(repoRoot, hash)
+    .map(parseSubtreeCommitList)
+    .map(buildTree);
+}
+
 function getSubtreeCommitList(
   repoRoot: string,
   hash: string = '.',
@@ -177,15 +186,6 @@ function buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   root.deletedFiles = new Set();
 
   return root;
-}
-
-export default function getSubtree(
-  repoRoot: string,
-  hash: string = '.',
-): Observable<CommitNode> {
-  return getSubtreeCommitList(repoRoot, hash)
-    .map(parseSubtreeCommitList)
-    .map(buildTree);
 }
 
 // Exported for testing.
