@@ -70,7 +70,6 @@ export type RawCommitNode = {|
 
 export type CommitNode = {|
   hash: string,
-  isCurrentRevision: boolean,
   phase: CommitPhase,
   addedFiles: Set<string>,
   copiedFiles: Set<Copy>,
@@ -84,4 +83,5 @@ export type CommitNode = {|
 export type Subtree = {|
   root: CommitNode,
   initialFiles: Set<string>,
+  currentCommit: CommitNode,
 |};

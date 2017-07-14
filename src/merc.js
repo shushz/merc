@@ -34,6 +34,7 @@ yargs
               return moveSubtree({
                 sourceRepoRoot: repoRoot,
                 sourceRoot: subtreeRoot,
+                currentHash: subtree.currentCommit.hash,
                 destRepoRoot: shadowRepoRoot,
                 destParentHash: '.',
               });

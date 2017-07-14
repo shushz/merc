@@ -155,13 +155,19 @@ function buildTree(rawNodes: Set<RawCommitNode>): Subtree {
   // Create a map of hashes to nodes. Later we'll mutate these nodes to set their parent and
   // children.
   const nodes = new Map();
+  let currentCommit;
   rawNodes.forEach(rawNode => {
-    nodes.set(rawNode.hash, {
+    const node = {
       ...rawNode,
       parent: null,
       children: [],
-    });
+    };
+    nodes.set(rawNode.hash, node);
+    if (rawNode.isCurrentRevision) {
+      currentCommit = node;
+    }
   });
+  invariant(currentCommit != null);
 
   // Set the parent and child of each node, and find the root.
   let root;
@@ -187,7 +193,7 @@ function buildTree(rawNodes: Set<RawCommitNode>): Subtree {
   root.modifiedFiles = new Set();
   root.deletedFiles = new Set();
 
-  return {root, initialFiles};
+  return {root, initialFiles, currentCommit};
 }
 
 // Exported for testing.

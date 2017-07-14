@@ -15,6 +15,7 @@ import {Observable} from 'rxjs';
 type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
   sourceRoot: CommitNode,
+  currentHash: string,
   destRepoRoot: string,
   destParentHash: string,
 |};
@@ -22,7 +23,13 @@ type MoveSubtreeOptions = {|
 export function moveSubtree(
   options: MoveSubtreeOptions,
 ): Observable<CommitNode> {
-  const {sourceRepoRoot, sourceRoot, destRepoRoot, destParentHash} = options;
+  const {
+    sourceRepoRoot,
+    sourceRoot,
+    currentHash,
+    destRepoRoot,
+    destParentHash,
+  } = options;
   return Observable.defer(() => {
     const sourceNodesToShadowNodes: Map<CommitNode, CommitNode> = new Map();
     let shadowRoot;
@@ -52,7 +59,7 @@ export function moveSubtree(
               newShadowNode.parent = shadowParent;
               shadowParent.children.push(newShadowNode);
             }
-            if (newShadowNode.isCurrentRevision) {
+            if (sourceNode.hash === currentHash) {
               currentShadowNode = newShadowNode;
             }
           })
@@ -98,7 +105,6 @@ function createShadowCommitNode(
       .concat(getCurrentRevisionHash(destRepoRoot))
       .map(hash => {
         return {
-          isCurrentRevision: sourceNode.isCurrentRevision,
           phase: sourceNode.phase,
           addedFiles: sourceNode.addedFiles,
           copiedFiles: sourceNode.copiedFiles,
