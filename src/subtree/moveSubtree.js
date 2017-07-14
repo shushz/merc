@@ -5,7 +5,7 @@
  * @format
  */
 
-import type {CommitNode, ShadowCommitNode} from '../types';
+import type {CommitNode} from '../types';
 
 import debugLog from '../debugLog';
 import {getCurrentRevisionHash, transplant, update} from '../HgUtils';
@@ -21,13 +21,10 @@ type MoveSubtreeOptions = {|
 
 export function moveSubtree(
   options: MoveSubtreeOptions,
-): Observable<ShadowCommitNode> {
+): Observable<CommitNode> {
   const {sourceRepoRoot, sourceRoot, destRepoRoot, destParentHash} = options;
   return Observable.defer(() => {
-    const sourceNodesToShadowNodes: Map<
-      CommitNode,
-      ShadowCommitNode,
-    > = new Map();
+    const sourceNodesToShadowNodes: Map<CommitNode, CommitNode> = new Map();
     let shadowRoot;
     let currentShadowNode;
 
@@ -88,7 +85,7 @@ function createShadowCommitNode(
   sourceNode: CommitNode,
   destRepoRoot: string,
   destParentHash: string,
-): Observable<ShadowCommitNode> {
+): Observable<CommitNode> {
   return (
     update(destRepoRoot, destParentHash)
       // Import the source commit (unless it's public).
@@ -109,7 +106,6 @@ function createShadowCommitNode(
           deletedFiles: sourceNode.deletedFiles,
           hash,
           parent: null,
-          sourceHash: sourceNode.hash,
           children: [],
         };
       })
