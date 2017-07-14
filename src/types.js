@@ -47,3 +47,8 @@ export type CommitNode = {|
   parent: ?CommitNode,
   children: Array<CommitNode>,
 |};
+
+export type Subtree = {|
+  root: CommitNode,
+  initialFiles: Set<string>,
+|};

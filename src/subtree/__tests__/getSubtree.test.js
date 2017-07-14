@@ -88,7 +88,7 @@ test('_buildTree', () => {
       phase: 'public',
     },
   ]);
-  const root = _buildTree(rawNodes);
+  const root = _buildTree(rawNodes).root;
   expect(root.hash).toBe('c42dae43c973a141cf0f15d9bcb6f32093e1c1d2');
   expect(root.parent).toBe(null);
   expect(root.children.length).toBe(1);

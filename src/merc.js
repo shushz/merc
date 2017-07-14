@@ -24,15 +24,16 @@ yargs
         debugLog('Repo root is: ', repoRoot);
 
         return getSubtree(repoRoot).switchMap(subtree => {
-          const baseFiles = getFileDependencies(subtree);
+          const subtreeRoot = subtree.root;
+          const baseFiles = getFileDependencies(subtreeRoot);
           debugLog('The base files are: ', baseFiles);
 
-          return update(repoRoot, subtree.hash)
+          return update(repoRoot, subtreeRoot.hash)
             .concat(initShadowRepo(repoRoot, baseFiles))
             .switchMap(shadowRepoRoot => {
               return moveSubtree({
                 sourceRepoRoot: repoRoot,
-                sourceRoot: subtree,
+                sourceRoot: subtreeRoot,
                 destRepoRoot: shadowRepoRoot,
                 destParentHash: '.',
               });

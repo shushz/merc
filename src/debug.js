@@ -5,7 +5,7 @@
  * @format
  */
 
-import type {CommitNode} from './types';
+import type {CommitNode, Subtree} from './types';
 
 function decircleNode(node: CommitNode): Object {
   const children = node.children.map(child => decircleNode(child));
@@ -20,8 +20,8 @@ function decircleNode(node: CommitNode): Object {
   };
 }
 
-export function dumpSubtree(node: CommitNode): void {
-  const decircled = decircleNode(node);
+export function dumpSubtree(tree: Subtree): void {
+  const decircled = decircleNode(tree.root);
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(decircled, null, 4));
 }
