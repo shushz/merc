@@ -107,5 +107,5 @@ test('_buildTree', () => {
 test('getSubtree', async () => {
   const repoRoot = path.resolve(__dirname, '../../__tests__/fixtures/repo2');
   const subtree = await getSubtree(repoRoot).toPromise();
-  expect(subtree).toMatchSnapshot();
+  expect(subtree.root).toMatchSnapshot();
 });
