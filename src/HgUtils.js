@@ -26,8 +26,7 @@ function hg(
   options: ObserveProcessOptions = {},
 ): Observable<string> {
   return Observable.defer(() => {
-    debugLog('Running hg ', subcommand, args, ' at ', options.cwd);
-
+    debugLog('hg', subcommand, args, 'in dir', options.cwd);
     return runCommand('hg', [subcommand, ...args], {
       ...options,
       env: {...process.env, ...options.env, HGPLAIN: '1'},
@@ -44,7 +43,8 @@ function hg(
   });
 }
 
-export function getRepoRoot(dir?: string): Observable<string> {
+export function getRepoRoot(dir_?: string): Observable<string> {
+  const dir = dir_ || process.cwd();
   return hg('root', [], {cwd: dir}).map(out => out.trim());
 }
 
@@ -119,7 +119,12 @@ export function transplant(
 }
 
 export function strip(repoRoot: string, hash: string): Observable<empty> {
-  return hg('strip', [hash], {cwd: repoRoot}).ignoreElements();
+  // Fake for now so we don't accidentally mess things up.
+  return Observable.defer(() => {
+    debugLog('PRETEND: hg strip', hash, 'in', repoRoot);
+    return Observable.empty();
+  });
+  // return hg('strip', [hash], {cwd: repoRoot}).ignoreElements();
 }
 
 export function shelve(repoRoot: string): Observable<empty> {

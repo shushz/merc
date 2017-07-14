@@ -5,11 +5,12 @@
  * @format
  */
 
-import type {AppState, InitializedAppState, SerializedAppState} from './types';
+import type {AppState, SerializableAppState, SerializedAppState} from './types';
 
 import {getRepoRoot, isDirty} from './HgUtils';
 import {getShadowRepoRoot} from './RepoUtils';
 import invariant from 'assert';
+import debugLog from './debugLog';
 import getSubtree from './subtree/getSubtree';
 import {getClock} from './watchman';
 import fsPromise from 'nuclide-commons/fsPromise';
@@ -39,11 +40,8 @@ export function getInitialAppState(
         }
         return Observable.of({
           initialized: false,
-          wClock: null,
           sourceRepoRoot: repoRoot,
           shadowRepoRoot,
-          shadowSubtree: null,
-          shadowRootSources: null,
         });
       }
 
@@ -64,6 +62,9 @@ export function getInitialAppState(
           shadowRootSources: new Map(serialized.shadowRootSources),
         }),
       );
+    })
+    .do(appState => {
+      debugLog('Initial State: ', JSON.stringify(appState));
     });
 }
 
@@ -91,24 +92,26 @@ function loadSerializedState(
     });
 }
 
-export function saveState(state: InitializedAppState): Observable<empty> {
+export function saveState(state: SerializableAppState): Observable<empty> {
   const {shadowRepoRoot, sourceRepoRoot} = state;
   return (
     getClock(sourceRepoRoot)
       // Update the clock.
-      .switchMap(wClock => ({...state, wClock}))
-      .switchMap(finalState => {
-        const serializationPath = getSerializationPath(shadowRepoRoot);
-        const serialized = serialize(finalState);
-        return Observable.defer(() =>
-          fsPromise.writeFile(serializationPath, JSON.stringify(serialized)),
-        );
+      .map(wClock => ({...state, wClock}))
+      .map(finalState => ({
+        serializationPath: getSerializationPath(shadowRepoRoot),
+        serialized: serialize(finalState),
+      }))
+      .switchMap(({serializationPath, serialized}) => {
+        const stringified = JSON.stringify(serialized, null, '  ');
+        debugLog('Saving final state:', stringified);
+        return fsPromise.writeFile(serializationPath, stringified);
       })
       .ignoreElements()
   );
 }
 
-function serialize(state: InitializedAppState): SerializedAppState {
+function serialize(state): SerializedAppState {
   return {
     wClock: state.wClock,
     shadowRootSources: [...state.shadowRootSources],

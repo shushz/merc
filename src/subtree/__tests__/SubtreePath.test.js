@@ -7,6 +7,8 @@
 
 /* eslint-env jest */
 
+import type {Subtree} from '../../types';
+
 import {getPathToCurrent, getByPath} from '../SubtreePath';
 import {_buildTree} from '../getSubtree';
 

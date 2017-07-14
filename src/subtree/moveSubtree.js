@@ -8,7 +8,7 @@
 import type {CommitNode} from '../types';
 
 import debugLog from '../debugLog';
-import {getCurrentRevisionHash, transplant, update} from '../HgUtils';
+import {getCurrentRevisionHash, strip, transplant, update} from '../HgUtils';
 import {dfs} from '../TreeUtils';
 import {Observable} from 'rxjs';
 
@@ -34,6 +34,8 @@ export function moveSubtree(
     const sourceNodesToShadowNodes: Map<CommitNode, CommitNode> = new Map();
     let shadowRoot;
     let currentShadowNode;
+
+    debugLog('Moving subtree');
 
     return Observable.from(dfs(sourceRoot))
       .concatMap(sourceNode => {
@@ -73,13 +75,8 @@ export function moveSubtree(
       // Move to the current node in the shadow tree.
       update(destRepoRoot, currentShadowNode.hash),
       // Strip the non-public nodes from the source tree.
-      Observable.from(sourceRoot.children).concatMap(
-        node =>
-          Observable.defer(() => {
-            debugLog('Running strip ', node.hash);
-            return Observable.empty();
-          }),
-        // strip(sourceRepoRoot, node.hash),
+      Observable.from(sourceRoot.children).concatMap(node =>
+        strip(sourceRepoRoot, node.hash),
       ),
     )
       .ignoreElements()

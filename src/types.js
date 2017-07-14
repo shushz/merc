@@ -11,21 +11,15 @@ export type CommitPhase = 'draft' | 'public';
 
 export type Copy = {source: string, dest: string};
 
-export type UninitializedAppState = {|
+export type UninitializedAppState = {
   // `break` hasn't been run yet. There's no shadow repo.
   initialized: false,
 
-  wClock: null,
-
   sourceRepoRoot: string,
-
   shadowRepoRoot: string,
-  shadowSubtree: null,
+};
 
-  shadowRootSources: null,
-|};
-
-export type InitializedAppState = {|
+export type InitializedAppState = {
   // `break` has been run for this repo.
   initialized: true,
 
@@ -40,9 +34,15 @@ export type InitializedAppState = {|
 
   // A map from the hashes of all shadow roots to their source commits.
   shadowRootSources: Map<string, string>,
-|};
+};
 
 export type AppState = UninitializedAppState | InitializedAppState;
+
+export type SerializableAppState = {
+  sourceRepoRoot: string,
+  shadowRepoRoot: string,
+  shadowRootSources: Map<string, string>,
+};
 
 export type SerializedAppState = {|
   wClock: string,
