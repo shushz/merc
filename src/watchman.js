@@ -37,10 +37,11 @@ export type WatchmanResult = {|
   filesModified: Set<string>,
 |};
 
-export function getClock(path: string): Observable<string> {
-  return runCommand(['clock', path]).map(
-    response => ((response: any): WatchmanClockResponse).clock,
-  );
+export function getClock(repoRoot: string): Observable<string> {
+  // Start watching the project, if it isn't already.
+  return runCommand(['watch-project', repoRoot])
+    .switchMap(() => runCommand(['clock', repoRoot]))
+    .map(response => ((response: any): WatchmanClockResponse).clock);
 }
 
 export function getChanges(
