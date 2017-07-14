@@ -35,6 +35,7 @@ yargs
                 sourceRepoRoot: repoRoot,
                 sourceRoot: subtree,
                 destRepoRoot: shadowRepoRoot,
+                destParentHash: '.',
               });
             });
         });

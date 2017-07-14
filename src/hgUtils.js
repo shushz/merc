@@ -284,16 +284,17 @@ export function setPhase(
   return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
 }
 
-type GraftAllOptions = {|
+type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
   sourceRoot: CommitNode,
   destRepoRoot: string,
+  destParentHash: string,
 |};
 
 export function moveSubtree(
-  options: GraftAllOptions,
+  options: MoveSubtreeOptions,
 ): Observable<ShadowCommitNode> {
-  const {sourceRepoRoot, sourceRoot, destRepoRoot} = options;
+  const {sourceRepoRoot, sourceRoot, destRepoRoot, destParentHash} = options;
   return Observable.defer(() => {
     const sourceNodesToShadowNodes: Map<
       CommitNode,
@@ -307,11 +308,14 @@ export function moveSubtree(
         const shadowParent = sourceNode.parent == null
           ? null
           : sourceNodesToShadowNodes.get(sourceNode.parent);
+        const parentHash = shadowParent == null
+          ? destParentHash
+          : shadowParent.hash;
         return createShadowCommitNode(
           sourceRepoRoot,
           sourceNode,
           destRepoRoot,
-          shadowParent,
+          parentHash,
         )
           .do(newShadowNode => {
             // Keep track of which node in the source tree this one corresponds to.
@@ -335,7 +339,7 @@ export function moveSubtree(
   }).switchMap(({shadowRoot, currentShadowNode}) =>
     Observable.merge(
       // Move to the current node in the shadow tree.
-      hg('update', [currentShadowNode.hash], {cwd: destRepoRoot}),
+      update(destRepoRoot, currentShadowNode.hash),
       // Strip the non-public nodes from the source tree.
       Observable.from(sourceRoot.children).concatMap(
         node =>
@@ -355,34 +359,37 @@ function createShadowCommitNode(
   sourceRepoRoot: string,
   sourceNode: CommitNode,
   destRepoRoot: string,
-  destParentNode: ?ShadowCommitNode,
+  destParentHash: string,
 ): Observable<ShadowCommitNode> {
-  let firstAction;
-  if (sourceNode.phase === 'public') {
-    firstAction = Observable.empty();
-  } else {
-    const patch = hg('export', ['-r', sourceNode.hash], {cwd: sourceRepoRoot});
-    invariant(destParentNode != null);
-    firstAction = hg('update', [destParentNode.hash], {
-      cwd: destRepoRoot,
-    })
-      .concat(hg('import', ['-'], {input: patch, cwd: destRepoRoot}))
-      .ignoreElements();
-  }
-  return firstAction.concat(getCurrentRevisionHash(destRepoRoot)).map(hash => {
-    return {
-      isCurrentRevision: sourceNode.isCurrentRevision,
-      phase: sourceNode.phase,
-      addedFiles: sourceNode.addedFiles,
-      copiedFiles: sourceNode.copiedFiles,
-      modifiedFiles: sourceNode.modifiedFiles,
-      deletedFiles: sourceNode.deletedFiles,
-      hash,
-      parent: null,
-      sourceHash: sourceNode.hash,
-      children: [],
-    };
-  });
+  return (
+    update(destRepoRoot, destParentHash)
+      // Import the source commit (unless it's public).
+      .concat(
+        sourceNode.phase === 'public'
+          ? Observable.empty()
+          : hg('export', ['-r', sourceNode.hash], {
+              cwd: sourceRepoRoot,
+            }).concatMap(patch =>
+              hg('import', ['-'], {input: patch, cwd: destRepoRoot}),
+            ),
+      )
+      .ignoreElements()
+      .concat(getCurrentRevisionHash(destRepoRoot))
+      .map(hash => {
+        return {
+          isCurrentRevision: sourceNode.isCurrentRevision,
+          phase: sourceNode.phase,
+          addedFiles: sourceNode.addedFiles,
+          copiedFiles: sourceNode.copiedFiles,
+          modifiedFiles: sourceNode.modifiedFiles,
+          deletedFiles: sourceNode.deletedFiles,
+          hash,
+          parent: null,
+          sourceHash: sourceNode.hash,
+          children: [],
+        };
+      })
+  );
 }
 
 // Exported for testing.
