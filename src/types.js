@@ -48,6 +48,21 @@ export type CommitNode = {|
   copiedFiles: Set<Copy>,
   modifiedFiles: Set<string>,
   deletedFiles: Set<string>,
+
   parent: ?CommitNode,
   children: Array<CommitNode>,
+|};
+
+export type ShadowCommitNode = {|
+  hash: string,
+  isCurrentRevision: boolean,
+  phase: CommitPhase,
+  addedFiles: Set<string>,
+  copiedFiles: Set<Copy>,
+  modifiedFiles: Set<string>,
+  deletedFiles: Set<string>,
+  parent: ?ShadowCommitNode,
+  children: Array<ShadowCommitNode>,
+
+  sourceHash: string,
 |};

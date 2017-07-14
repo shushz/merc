@@ -6,7 +6,12 @@
  */
 
 import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
-import type {CommitPhase, CommitNode, RawCommitNode} from './types';
+import type {
+  CommitPhase,
+  CommitNode,
+  RawCommitNode,
+  ShadowCommitNode,
+} from './types';
 
 import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
@@ -261,4 +266,104 @@ export function setPhase(
   hash: string,
 ): Observable<void> {
   return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
+}
+
+type GraftAllOptions = {|
+  sourceRepoRoot: string,
+  sourceRoot: CommitNode,
+  destRepoRoot: string,
+|};
+
+export function moveSubtree(
+  options: GraftAllOptions,
+): Observable<ShadowCommitNode> {
+  const {sourceRepoRoot, sourceRoot, destRepoRoot} = options;
+  return Observable.defer(() => {
+    const sourceNodesToShadowNodes: Map<
+      CommitNode,
+      ShadowCommitNode,
+    > = new Map();
+    let shadowRoot;
+    let currentShadowNode;
+
+    return Observable.from(walk(sourceRoot))
+      .concatMap(sourceNode => {
+        const shadowParent = sourceNode.parent == null
+          ? null
+          : sourceNodesToShadowNodes.get(sourceNode.parent);
+        return createShadowCommitNode(
+          sourceRepoRoot,
+          sourceNode,
+          destRepoRoot,
+          shadowParent,
+        ).do(newShadowNode => {
+          // Keep track of which node in the source tree this one corresponds to.
+          sourceNodesToShadowNodes.set(sourceNode, newShadowNode);
+
+          if (shadowParent == null) {
+            shadowRoot = newShadowNode;
+          } else {
+            newShadowNode.parent = shadowParent;
+            shadowParent.children.push(newShadowNode);
+          }
+          if (newShadowNode.isCurrentRevision) {
+            currentShadowNode = newShadowNode;
+          }
+        })
+        .ignoreElements();
+      })
+      .concat(
+        Observable.defer(() => Observable.of({shadowRoot, currentShadowNode})),
+      );
+  }).switchMap(({shadowRoot, currentShadowNode}) =>
+    Observable.merge(
+      // Move to the current node in the shadow tree.
+      hg('update', [currentShadowNode.hash], {cwd: destRepoRoot}),
+      // Strip the non-public nodes from the source tree.
+      Observable.from(sourceRoot.children).concatMap(node =>
+        hg('strip', [node.hash], {cwd: sourceRepoRoot}),
+      ),
+    )
+      .ignoreElements()
+      .concat(Observable.of(shadowRoot)),
+  );
+}
+
+function createShadowCommitNode(
+  sourceRepoRoot: string,
+  sourceNode: CommitNode,
+  destRepoRoot: string,
+  destParentNode: ?ShadowCommitNode,
+): Observable<ShadowCommitNode> {
+  let firstAction;
+  if (sourceNode.phase === 'public') {
+    firstAction = Observable.empty();
+  } else {
+    const patch = hg('export', ['-r', sourceNode.hash], {cwd: sourceRepoRoot});
+    invariant(destParentNode != null);
+    firstAction = hg('update', [destParentNode.hash], {
+      cwd: destRepoRoot,
+    }).concat(hg('import', ['-'], {input: patch, cwd: destRepoRoot}));
+  }
+  return firstAction.concat(getCurrentRevisionHash(destRepoRoot)).map(hash => {
+    return {
+      isCurrentRevision: sourceNode.isCurrentRevision,
+      phase: sourceNode.phase,
+      addedFiles: sourceNode.addedFiles,
+      copiedFiles: sourceNode.copiedFiles,
+      modifiedFiles: sourceNode.modifiedFiles,
+      deletedFiles: sourceNode.deletedFiles,
+      hash,
+      parent: null,
+      sourceHash: sourceNode.hash,
+      children: [],
+    };
+  });
+}
+
+function* walk(tree: CommitNode): Generator<CommitNode, void, void> {
+  yield tree;
+  for (const child of tree.children) {
+    yield* walk(child);
+  }
 }
