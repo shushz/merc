@@ -75,40 +75,36 @@ function _copyHgIgnores(
 }
 
 function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
-  return Observable.defer(() =>
-    Observable.from(paths)
-      .mergeMap(async path => {
-        const name = resolve(path, '.hgignore');
-        const exists = await fsPromise.exists(resolve(root, name));
-        return {name, exists};
-      })
-      .filter(entry => entry.exists)
-      .map(entry => entry.name)
-      .reduce((set, name) => {
-        const copy = new Set(set);
-        copy.add(name);
-        return copy;
-      }, new Set()),
-  );
+  return Observable.from(paths)
+    .mergeMap(async path => {
+      const name = resolve(path, '.hgignore');
+      const exists = await fsPromise.exists(resolve(root, name));
+      return {name, exists};
+    })
+    .filter(entry => entry.exists)
+    .map(entry => entry.name)
+    .reduce((set, name) => {
+      const copy = new Set(set);
+      copy.add(name);
+      return copy;
+    }, new Set());
 }
 
 function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
   return Observable.from(paths)
     .concatMap(path => {
       const pathToCreate = resolve(root, path);
-      return Observable.defer(() => fsPromise.mkdirp(pathToCreate));
+      return fsPromise.mkdirp(pathToCreate);
     })
     .ignoreElements();
 }
 
 function _makePublicCommit(root: string, message: string): Observable<empty> {
-  return Observable.defer(() => add(root, '.'))
-    .concat(Observable.defer(() => commit(root, message)))
+  return add(root, '.')
+    .concat(commit(root, message))
     .concat(
-      Observable.defer(() =>
-        getCurrentRevisionHash(root).switchMap(hash =>
-          setPhase(root, 'public', hash),
-        ),
+      getCurrentRevisionHash(root).switchMap(hash =>
+        setPhase(root, 'public', hash),
       ),
     )
     .ignoreElements();
@@ -125,9 +121,7 @@ function _copyBaseFiles(
     files.add('.arcconfig');
   }
 
-  return Observable.defer(() => {
-    return Observable.from(files).mergeMap(name =>
-      _copyIfExists(sourceRepo, targetRepo, name),
-    );
-  }).ignoreElements();
+  return Observable.from(files)
+    .mergeMap(name => _copyIfExists(sourceRepo, targetRepo, name))
+    .ignoreElements();
 }
