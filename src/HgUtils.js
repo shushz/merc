@@ -5,18 +5,11 @@
  * @format
  */
 
-import type {ObserveProcessOptions} from 'nuclide-commons/process.js';
-import type {
-  CommitPhase,
-  CommitNode,
-  RawCommitNode,
-  ShadowCommitNode,
-} from './types';
+import type {ObserveProcessOptions} from 'nuclide-commons/process';
+import type {CommitPhase} from './types';
 
-import invariant from 'assert';
-import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
+import {runCommand} from 'nuclide-commons/process';
 import {Observable} from 'rxjs';
-import {dfs} from './TreeUtils';
 
 export class NotARepositoryError extends Error {
   constructor() {
@@ -31,6 +24,7 @@ function hg(
   options: ObserveProcessOptions = {},
 ): Observable<string> {
   return Observable.defer(() => {
+    // eslint-disable-next-line no-console
     console.log('Running hg ', subcommand, args, ' at ', options.cwd);
 
     return runCommand('hg', [subcommand, ...args], {

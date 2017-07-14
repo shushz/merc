@@ -1,10 +1,6 @@
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
+/*
+ * Copyright (c) 2016-present, Facebook, Inc.
  * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
  * @flow
  * @format
  */
@@ -62,12 +58,12 @@ function copyHgIgnores(
   paths: Set<string>,
 ): Observable<empty> {
   return hgIgnores(sourceRepo, paths)
-    .switchMap(hgIgnores => {
-      if (hgIgnores.size === 0) {
+    .switchMap(ignores => {
+      if (ignores.size === 0) {
         return fsPromise.writeFile(resolve(targetRepo, '.hgignore'), '');
       }
 
-      return Observable.from(hgIgnores).mergeMap(name =>
+      return Observable.from(ignores).mergeMap(name =>
         copyIfExists(sourceRepo, targetRepo, name),
       );
     })

@@ -5,10 +5,7 @@
  * @format
  */
 
-import type {
-  CommitNode,
-  RawCommitNode,
-} from './types';
+import type {CommitNode, RawCommitNode} from './types';
 
 import invariant from 'assert';
 import {Observable} from 'rxjs';
@@ -49,14 +46,12 @@ function getSubtreeCommitList(
 /**
  * Parse the `getSubtreeCommitList` into a Map of raw nodes.
  */
-function parseSubtreeCommitList(
-  subtreeCommits: string,
-): Set<RawCommitNode> {
+function parseSubtreeCommitList(subtreeCommits: string): Set<RawCommitNode> {
   const lines = subtreeCommits.trim().split('\n');
   let currentSection = null;
   let nextSectionIndex = 0;
   let currentNode: ?RawCommitNode = null;
-  let nodes: Set<RawCommitNode> = new Set();
+  const nodes: Set<RawCommitNode> = new Set();
   let foundCurrentRevision = false;
 
   const closeNode = node => {
@@ -66,7 +61,7 @@ function parseSubtreeCommitList(
     }
   };
 
-  for (var i = 0; i < lines.length; i++) {
+  for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Identify section markers.

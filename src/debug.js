@@ -1,10 +1,6 @@
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
+/*
+ * Copyright (c) 2016-present, Facebook, Inc.
  * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
  * @flow
  * @format
  */
@@ -12,7 +8,7 @@
 import type {CommitNode} from './types';
 
 function decircleNode(node: CommitNode): Object {
-  const children = node.children.map(child => _decircleNode(child));
+  const children = node.children.map(child => decircleNode(child));
   return {
     ...node,
     children,
@@ -25,6 +21,7 @@ function decircleNode(node: CommitNode): Object {
 }
 
 export function dumpSubtree(node: CommitNode): void {
-  const decircled = _decircleNode(node);
+  const decircled = decircleNode(node);
+  // eslint-disable-next-line no-console
   console.log(JSON.stringify(decircled, null, 4));
 }

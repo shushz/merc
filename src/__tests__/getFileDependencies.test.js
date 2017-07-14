@@ -7,7 +7,6 @@
 
 /* eslint-env jest */
 
-import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import getFileDependencies from '../getFileDependencies';
 import getSubtree from '../getSubtree';

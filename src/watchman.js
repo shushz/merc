@@ -1,10 +1,6 @@
-/**
- * Copyright (c) 2015-present, Facebook, Inc.
+/*
+ * Copyright (c) 2016-present, Facebook, Inc.
  * All rights reserved.
- *
- * This source code is licensed under the license found in the LICENSE file in
- * the root directory of this source tree.
- *
  * @flow
  * @format
  */
@@ -20,17 +16,17 @@ type WatchmanClockResponse = {|
   clock: string,
 |};
 
-type FileStat = {|
-  new: boolean,
-  exists: boolean,
-  name: string,
-|};
+// type FileStat = {|
+//   new: boolean,
+//   exists: boolean,
+//   name: string,
+// |};
 
-type WatchmanSinceReponse = {|
-  is_fresh_instance: boolean,
-  clock: string,
-  files: Array<FileStat>,
-|};
+// type WatchmanSinceReponse = {|
+//   is_fresh_instance: boolean,
+//   clock: string,
+//   files: Array<FileStat>,
+// |};
 
 export type WatchmanResult = {|
   clock: string,
