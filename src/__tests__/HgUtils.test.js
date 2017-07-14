@@ -22,10 +22,14 @@ describe('getRepoRoot', () => {
     expect(actual).toBe(repoRoot);
   });
 
-  test("it returns null when there's no repo", async () => {
+  test("it throws when there's no repo", async () => {
+    expect.assertions(1);
     const dir = path.resolve(__dirname, './fixtures/not-a-repo/a/b');
-    const actual = await getRepoRoot(dir).toPromise();
-    expect(actual).toBe(null);
+    try {
+      await getRepoRoot(dir).toPromise();
+    } catch (err) {
+      expect(err.constructor.name).toBe('NotARepositoryError');
+    }
   });
 });
 

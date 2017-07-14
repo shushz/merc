@@ -5,7 +5,7 @@
  * @format
  */
 
-import type {CommitNode, ShadowCommitNode} from '../types';
+import type {CommitNode} from '../types';
 
 import debugLog from '../debugLog';
 import {getCurrentRevisionHash, transplant, update} from '../HgUtils';
@@ -15,19 +15,23 @@ import {Observable} from 'rxjs';
 type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
   sourceRoot: CommitNode,
+  currentHash: string,
   destRepoRoot: string,
   destParentHash: string,
 |};
 
 export function moveSubtree(
   options: MoveSubtreeOptions,
-): Observable<ShadowCommitNode> {
-  const {sourceRepoRoot, sourceRoot, destRepoRoot, destParentHash} = options;
+): Observable<CommitNode> {
+  const {
+    sourceRepoRoot,
+    sourceRoot,
+    currentHash,
+    destRepoRoot,
+    destParentHash,
+  } = options;
   return Observable.defer(() => {
-    const sourceNodesToShadowNodes: Map<
-      CommitNode,
-      ShadowCommitNode,
-    > = new Map();
+    const sourceNodesToShadowNodes: Map<CommitNode, CommitNode> = new Map();
     let shadowRoot;
     let currentShadowNode;
 
@@ -55,7 +59,7 @@ export function moveSubtree(
               newShadowNode.parent = shadowParent;
               shadowParent.children.push(newShadowNode);
             }
-            if (newShadowNode.isCurrentRevision) {
+            if (sourceNode.hash === currentHash) {
               currentShadowNode = newShadowNode;
             }
           })
@@ -88,7 +92,7 @@ function createShadowCommitNode(
   sourceNode: CommitNode,
   destRepoRoot: string,
   destParentHash: string,
-): Observable<ShadowCommitNode> {
+): Observable<CommitNode> {
   return (
     update(destRepoRoot, destParentHash)
       // Import the source commit (unless it's public).
@@ -101,7 +105,6 @@ function createShadowCommitNode(
       .concat(getCurrentRevisionHash(destRepoRoot))
       .map(hash => {
         return {
-          isCurrentRevision: sourceNode.isCurrentRevision,
           phase: sourceNode.phase,
           addedFiles: sourceNode.addedFiles,
           copiedFiles: sourceNode.copiedFiles,
@@ -109,7 +112,6 @@ function createShadowCommitNode(
           deletedFiles: sourceNode.deletedFiles,
           hash,
           parent: null,
-          sourceHash: sourceNode.hash,
           children: [],
         };
       })

@@ -43,13 +43,8 @@ function hg(
   });
 }
 
-export function getRepoRoot(dir: string): Observable<?string> {
-  return hg('root', [], {cwd: dir}).map(out => out.trim()).catch(err => {
-    if (err instanceof NotARepositoryError) {
-      return Observable.of(null);
-    }
-    throw err;
-  });
+export function getRepoRoot(dir?: string): Observable<string> {
+  return hg('root', [], {cwd: dir}).map(out => out.trim());
 }
 
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {

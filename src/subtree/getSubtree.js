@@ -5,7 +5,7 @@
  * @format
  */
 
-import type {CommitNode, RawCommitNode} from '../types';
+import type {RawCommitNode, Subtree} from '../types';
 
 import invariant from 'assert';
 import {Observable} from 'rxjs';
@@ -35,7 +35,7 @@ const SUBTREE_COMMIT_LIST_SECTIONS = [
 export default function getSubtree(
   repoRoot: string,
   hash: string = '.',
-): Observable<CommitNode> {
+): Observable<Subtree> {
   return getSubtreeCommitList(repoRoot, hash)
     .map(parseSubtreeCommitList)
     .map(buildTree);
@@ -151,17 +151,23 @@ function parseSubtreeCommitList(subtreeCommits: string): Set<RawCommitNode> {
   return nodes;
 }
 
-function buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
+function buildTree(rawNodes: Set<RawCommitNode>): Subtree {
   // Create a map of hashes to nodes. Later we'll mutate these nodes to set their parent and
   // children.
   const nodes = new Map();
+  let currentCommit;
   rawNodes.forEach(rawNode => {
-    nodes.set(rawNode.hash, {
+    const node = {
       ...rawNode,
       parent: null,
       children: [],
-    });
+    };
+    nodes.set(rawNode.hash, node);
+    if (rawNode.isCurrentRevision) {
+      currentCommit = node;
+    }
   });
+  invariant(currentCommit != null);
 
   // Set the parent and child of each node, and find the root.
   let root;
@@ -180,12 +186,14 @@ function buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   invariant(root != null);
 
   // We don't actually care about the root's changes since we're looking at it in isolation.
+  // However, whatever files it added are the tree's initial files, which we'll need later.
+  const initialFiles = root.addedFiles;
   root.addedFiles = new Set();
   root.copiedFiles = new Set();
   root.modifiedFiles = new Set();
   root.deletedFiles = new Set();
 
-  return root;
+  return {root, initialFiles, currentCommit};
 }
 
 // Exported for testing.

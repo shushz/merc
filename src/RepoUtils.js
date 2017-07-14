@@ -19,15 +19,15 @@ import {
 
 export const MERC_PREFIX = resolve('.hg', 'merc');
 
-export function mercRepoPath(repoPath: string): string {
-  return resolve(repoPath, '.hg', 'merc');
+export function getShadowRepoRoot(repoRoot: string): string {
+  return resolve(repoRoot, MERC_PREFIX);
 }
 
 export function initShadowRepo(
   repoPath: string,
   baseFiles: Set<string>,
 ): Observable<string> {
-  const shadowRoot = mercRepoPath(repoPath);
+  const shadowRoot = getShadowRepoRoot(repoPath);
   const paths = pathSetOfFiles(baseFiles);
 
   return initRepo(shadowRoot)
