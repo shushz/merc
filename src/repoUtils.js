@@ -101,7 +101,7 @@ function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
     .ignoreElements();
 }
 
-function _makePublicCommit(root: string, message): Observable<empty> {
+function _makePublicCommit(root: string, message: string): Observable<empty> {
   return Observable.defer(() => add(root, '.'))
     .concat(Observable.defer(() => commit(root, message)))
     .concat(
