@@ -11,6 +11,7 @@ import type {CommitPhase} from './types';
 import debugLog from './debugLog';
 import {runCommand} from 'nuclide-commons/process';
 import {Observable} from 'rxjs';
+import {sep} from 'path';
 
 export class NotARepositoryError extends Error {
   constructor() {
@@ -85,6 +86,10 @@ export function commit(repoRoot: string, message: string): Observable<empty> {
   return hg('commit', ['-m', message], {cwd: repoRoot}).ignoreElements();
 }
 
+export function amend(repoRoot: string): Observable<empty> {
+  return hg('amend', [], {cwd: repoRoot}).ignoreElements();
+}
+
 export function update(repoRoot: string, hash: string): Observable<empty> {
   return hg('update', [hash], {cwd: repoRoot}).ignoreElements();
 }
@@ -123,4 +128,27 @@ export function shelve(repoRoot: string): Observable<empty> {
 
 export function unshelve(repoRoot: string): Observable<empty> {
   return hg('unshelve', [], {cwd: repoRoot}).ignoreElements();
+}
+
+export function copyByCat(
+  repoRoot: string,
+  hash: string,
+  targetPrefix: string,
+  files: Set<string>,
+): Observable<empty> {
+  return hg(
+    'cat',
+    ['-r', hash, '--output', `${targetPrefix}${sep}%p`, ...Array.from(files)],
+    {cwd: repoRoot},
+  ).ignoreElements();
+}
+
+export function rebase(
+  repoRoot: string,
+  sourceHash: string,
+  targetHash: string,
+): Observable<empty> {
+  return hg('rebase', ['-s', sourceHash, '-d', targetHash], {
+    cwd: repoRoot,
+  }).ignoreElements();
 }
