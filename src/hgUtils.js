@@ -247,6 +247,10 @@ export function initRepo(root: string): Observable<void> {
   return hg('init', [root]).ignoreElements();
 }
 
+export function add(repoRoot: string, ...files: Array<string>): Observable<void> {
+  return hg('add', files, {cwd: repoRoot}).ignoreElements();
+}
+
 export function commit(repoRoot: string, message: string): Observable<void> {
   return hg('commit', ['-m', message], {cwd: repoRoot}).ignoreElements();
 }
