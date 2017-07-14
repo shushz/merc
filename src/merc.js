@@ -13,13 +13,12 @@ import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
 import {moveSubtree} from './subtree/moveSubtree';
 import {initShadowRepo} from './RepoUtils';
-import {compact} from 'nuclide-commons/observable';
 
 yargs
   .usage('$0 <cmd> [args]')
   .command('break', 'Start managing current branch with merc', argv => {
     debugLog('Breaking stuff');
-    compact(getRepoRoot(process.cwd()))
+    getRepoRoot(process.cwd())
       .switchMap(repoRoot => {
         debugLog('Repo root is: ', repoRoot);
 
