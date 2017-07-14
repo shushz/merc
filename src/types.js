@@ -36,6 +36,7 @@ export type InitializedAppState = {|
   // Info about the current shadow root.
   shadowRepoRoot: string,
   shadowSubtree: Subtree,
+  shadowIsDirty: boolean,
 
   // A map from the hashes of all shadow roots to their source commits.
   shadowRootSources: Map<string, string>,
