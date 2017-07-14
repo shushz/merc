@@ -7,17 +7,19 @@
 
 import type {CommitNode} from '../types';
 
+const flatten = arr => [].concat(...arr);
+
+/**
+ * Determine all of the files required by the operations of a subtree.
+ */
 export default function getFileDependencies(tree: CommitNode): Set<string> {
-  if (tree.children.length === 0) {
-    return getImmediateDependencies(tree);
-  }
-  const childDeps = new Set();
-  tree.children.forEach(child => {
-    getFileDependencies(child).forEach(dep => {
-      childDeps.add(dep);
-    });
-  });
-  return resolve(tree, childDeps);
+  const childDeps = new Set(
+    flatten(tree.children.map(getFileDependencies).map(x => Array.from(x))),
+  );
+  return new Set([
+    ...getImmediateDependencies(tree),
+    ...resolve(tree, childDeps),
+  ]);
 }
 
 function getImmediateDependencies(node: CommitNode): Set<string> {
@@ -42,5 +44,5 @@ function resolve(parent: CommitNode, files: Set<string>): Set<string> {
     resolved.add(source);
   });
 
-  return new Set([...getImmediateDependencies(parent), ...resolved]);
+  return resolved;
 }
