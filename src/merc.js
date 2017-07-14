@@ -24,16 +24,16 @@ yargs
       .switchMap(repoRoot => {
         console.log('Repo root is: ', repoRoot);
 
-        return getSubtree(repoRoot).switchMap(subTree => {
-          const baseFiles = getFileDependencies(subTree);
+        return getSubtree(repoRoot).switchMap(subtree => {
+          const baseFiles = getFileDependencies(subtree);
           console.log('The base files are: ', baseFiles);
 
-          return update(repoRoot, subTree.hash)
+          return update(repoRoot, subtree.hash)
             .concat(initShadowRepo(repoRoot, baseFiles))
             .switchMap(shadowRepoRoot => {
               return moveSubtree({
                 sourceRepoRoot: repoRoot,
-                sourceRoot: subTree,
+                sourceRoot: subtree,
                 destRepoRoot: shadowRepoRoot,
               });
             });
