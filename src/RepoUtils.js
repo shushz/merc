@@ -12,14 +12,14 @@
 import {Observable} from 'rxjs';
 import {resolve} from 'path';
 import fsPromise from 'nuclide-commons/fsPromise';
-import {pathSetOfFiles} from './pathSetUtils';
+import {pathSetOfFiles} from './PathSetUtils';
 import {
   add,
   commit,
   getCurrentRevisionHash,
   initRepo,
   setPhase,
-} from './hgUtils';
+} from './HgUtils';
 
 export function initShadowRepo(
   repoPath: string,

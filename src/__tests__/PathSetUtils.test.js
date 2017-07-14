@@ -7,7 +7,7 @@
 
 /* eslint-env jest */
 
-import {pathSetOfFiles} from '../pathSetUtils';
+import {pathSetOfFiles} from '../PathSetUtils';
 
 describe('pathSetOfFiles', () => {
   test('it produces the union of parent paths', () => {

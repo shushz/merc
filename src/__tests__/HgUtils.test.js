@@ -17,7 +17,7 @@ import {
   getSubtree,
   _getSubtreeCommitList,
   _parseSubtreeCommitList,
-} from '../hgUtils';
+} from '../HgUtils';
 
 describe('getRepoRoot', () => {
   test('it reports the root', async () => {

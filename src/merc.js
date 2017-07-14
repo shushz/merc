@@ -10,10 +10,10 @@
  */
 
 import yargs from 'yargs';
-import {getRepoRoot, getSubtree, moveSubtree, update} from './hgUtils';
+import {getRepoRoot, getSubtree, moveSubtree, update} from './HgUtils';
 import {dumpSubtree} from './debug';
 import getFileDependencies from './getFileDependencies';
-import {initShadowRepo} from './repoUtils';
+import {initShadowRepo} from './RepoUtils';
 import {compact} from 'nuclide-commons/observable';
 
 yargs

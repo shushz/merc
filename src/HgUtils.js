@@ -16,7 +16,7 @@ import type {
 import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
 import {Observable} from 'rxjs';
-import {dfs} from './treeUtils';
+import {dfs} from './TreeUtils';
 
 export class NotARepositoryError extends Error {
   constructor() {
