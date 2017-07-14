@@ -117,3 +117,11 @@ export function transplant(
 export function strip(repoRoot: string, hash: string): Observable<empty> {
   return hg('strip', [hash], {cwd: repoRoot}).ignoreElements();
 }
+
+export function shelve(repoRoot: string): Observable<empty> {
+  return hg('shelve', [], {cwd: repoRoot}).ignoreElements();
+}
+
+export function unshelve(repoRoot: string): Observable<empty> {
+  return hg('unshelve', [], {cwd: repoRoot}).ignoreElements();
+}
