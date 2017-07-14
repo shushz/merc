@@ -12,7 +12,7 @@ import getFileDependencies from '../getFileDependencies';
 import getSubtree from '../getSubtree';
 
 test('getFileDependencies', async () => {
-  const repoRoot = path.resolve(__dirname, './fixtures/repo3');
+  const repoRoot = path.resolve(__dirname, '../../__tests__/fixtures/repo3');
   const tree = await getSubtree(repoRoot).toPromise();
   expect(Array.from(getFileDependencies(tree))).toEqual([
     'files/file.txt',

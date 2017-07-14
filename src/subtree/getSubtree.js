@@ -5,11 +5,11 @@
  * @format
  */
 
-import type {CommitNode, RawCommitNode} from './types';
+import type {CommitNode, RawCommitNode} from '../types';
 
 import invariant from 'assert';
 import {Observable} from 'rxjs';
-import {log} from './HgUtils';
+import {log} from '../HgUtils';
 
 const NODE = 'node';
 const P1_NODE = 'p1node';

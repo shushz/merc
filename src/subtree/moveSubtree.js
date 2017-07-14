@@ -5,10 +5,10 @@
  * @format
  */
 
-import type {CommitNode, ShadowCommitNode} from './types';
+import type {CommitNode, ShadowCommitNode} from '../types';
 
-import {getCurrentRevisionHash, transplant, update} from './HgUtils';
-import {dfs} from './TreeUtils';
+import {getCurrentRevisionHash, transplant, update} from '../HgUtils';
+import {dfs} from '../TreeUtils';
 import {Observable} from 'rxjs';
 
 type MoveSubtreeOptions = {|

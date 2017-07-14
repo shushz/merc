@@ -5,7 +5,7 @@
  * @format
  */
 
-import type {CommitNode} from './types';
+import type {CommitNode} from '../types';
 
 export default function getFileDependencies(tree: CommitNode): Set<string> {
   if (tree.children.length === 0) {

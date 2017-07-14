@@ -18,7 +18,7 @@ import {
 
 describe('_getSubtreeCommitList', () => {
   test('it returns a list of commits with metadata', async () => {
-    const repoRoot = path.resolve(__dirname, './fixtures/repo2');
+    const repoRoot = path.resolve(__dirname, '../../__tests__/fixtures/repo2');
     const list = await _getSubtreeCommitList(repoRoot).toPromise();
     expect(list).toMatchSnapshot();
   });
@@ -26,7 +26,10 @@ describe('_getSubtreeCommitList', () => {
 
 describe('_parseSubtreeCommitList', () => {
   test('it returns a set of commits', async () => {
-    const listPath = path.resolve(__dirname, './fixtures/subtree-list.txt');
+    const listPath = path.resolve(
+      __dirname,
+      '../../__tests__/fixtures/subtree-list.txt',
+    );
     const list = (await fsPromise.readFile(listPath)).toString();
     expect(_parseSubtreeCommitList(list)).toMatchSnapshot();
   });
@@ -102,7 +105,7 @@ test('_buildTree', () => {
 });
 
 test('getSubtree', async () => {
-  const repoRoot = path.resolve(__dirname, './fixtures/repo2');
+  const repoRoot = path.resolve(__dirname, '../../__tests__/fixtures/repo2');
   const subtree = await getSubtree(repoRoot).toPromise();
   expect(subtree).toMatchSnapshot();
 });
