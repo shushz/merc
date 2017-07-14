@@ -11,6 +11,7 @@ import {getRepoRoot, isDirty} from './HgUtils';
 import {getShadowRepoRoot} from './RepoUtils';
 import invariant from 'assert';
 import getSubtree from './subtree/getSubtree';
+import {getClock} from './watchman';
 import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import {Observable} from 'rxjs';
@@ -91,12 +92,20 @@ function loadSerializedState(
 }
 
 export function saveState(state: InitializedAppState): Observable<empty> {
-  const {shadowRepoRoot} = state;
-  const serializationPath = getSerializationPath(shadowRepoRoot);
-  const serialized = serialize(state);
-  return Observable.defer(() =>
-    fsPromise.writeFile(serializationPath, JSON.stringify(serialized)),
-  ).ignoreElements();
+  const {shadowRepoRoot, sourceRepoRoot} = state;
+  return (
+    getClock(sourceRepoRoot)
+      // Update the clock.
+      .switchMap(wClock => ({...state, wClock}))
+      .switchMap(finalState => {
+        const serializationPath = getSerializationPath(shadowRepoRoot);
+        const serialized = serialize(finalState);
+        return Observable.defer(() =>
+          fsPromise.writeFile(serializationPath, JSON.stringify(serialized)),
+        );
+      })
+      .ignoreElements()
+  );
 }
 
 function serialize(state: InitializedAppState): SerializedAppState {
