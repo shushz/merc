@@ -43,38 +43,41 @@ function _copyIfExists(
   sourceRepo: string,
   targetRepo: string,
   name: string,
-): Observable<void> {
+): Observable<empty> {
   const sourceFileName = resolve(sourceRepo, name);
   const destFileName = resolve(targetRepo, name);
   return Observable.defer(() =>
     Observable.fromPromise(fsPromise.exists(sourceFileName)),
-  ).switchMap(exists => {
-    if (exists) {
-      return Observable.fromPromise(
-        fsPromise.copy(sourceFileName, destFileName),
-      );
-    }
-
-    return Observable.empty();
-  });
+  )
+    .switchMap(exists => {
+      if (exists) {
+        return Observable.fromPromise(
+          fsPromise.copy(sourceFileName, destFileName),
+        );
+      }
+      return Observable.empty();
+    })
+    .ignoreElements();
 }
 
 function _copyHgIgnores(
   sourceRepo: string,
   targetRepo: string,
   paths: Set<string>,
-): Observable<void> {
-  return _hgIgnores(sourceRepo, paths).switchMap(hgIgnores => {
-    if (hgIgnores.size === 0) {
-      return Observable.fromPromise(
-        fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
-      );
-    }
+): Observable<empty> {
+  return _hgIgnores(sourceRepo, paths)
+    .switchMap(hgIgnores => {
+      if (hgIgnores.size === 0) {
+        return Observable.fromPromise(
+          fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
+        );
+      }
 
-    return Observable.from(hgIgnores).mergeMap(name =>
-      _copyIfExists(sourceRepo, targetRepo, name),
-    );
-  });
+      return Observable.from(hgIgnores).mergeMap(name =>
+        _copyIfExists(sourceRepo, targetRepo, name),
+      );
+    })
+    .ignoreElements();
 }
 
 function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
@@ -99,7 +102,7 @@ function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
   );
 }
 
-function _mkDirs(root: string, paths: Set<string>): Observable<void> {
+function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
   return Observable.from(paths)
     .concatMap(path => {
       const pathToCreate = resolve(root, path);
@@ -110,7 +113,7 @@ function _mkDirs(root: string, paths: Set<string>): Observable<void> {
     .ignoreElements();
 }
 
-function _makePublicCommit(root: string, message): Observable<void> {
+function _makePublicCommit(root: string, message): Observable<empty> {
   return Observable.defer(() => add(root, '.'))
     .concat(Observable.defer(() => commit(root, message)))
     .concat(
@@ -119,14 +122,15 @@ function _makePublicCommit(root: string, message): Observable<void> {
           setPhase(root, 'public', hash),
         ),
       ),
-    );
+    )
+    .ignoreElements();
 }
 
 function _copyBaseFiles(
   sourceRepo: string,
   targetRepo: string,
   baseFiles: Set<string>,
-): Observable<void> {
+): Observable<empty> {
   const files = new Set(baseFiles);
   // In case we are in an empty branch, default to at least one files that's likely to exist
   if (files.size === 0) {
@@ -137,5 +141,5 @@ function _copyBaseFiles(
     return Observable.from(files).mergeMap(name =>
       _copyIfExists(sourceRepo, targetRepo, name),
     );
-  });
+  }).ignoreElements();
 }

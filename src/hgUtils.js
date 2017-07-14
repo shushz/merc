@@ -257,18 +257,18 @@ export function getSubtree(
     .map(_buildTree);
 }
 
-export function initRepo(root: string): Observable<void> {
+export function initRepo(root: string): Observable<empty> {
   return hg('init', [root]).ignoreElements();
 }
 
 export function add(
   repoRoot: string,
   ...files: Array<string>
-): Observable<void> {
+): Observable<empty> {
   return hg('add', files, {cwd: repoRoot}).ignoreElements();
 }
 
-export function commit(repoRoot: string, message: string): Observable<void> {
+export function commit(repoRoot: string, message: string): Observable<empty> {
   return hg('commit', ['-m', message], {cwd: repoRoot}).ignoreElements();
 }
 
@@ -280,7 +280,7 @@ export function setPhase(
   repoRoot: string,
   phase: CommitPhase,
   hash: string,
-): Observable<void> {
+): Observable<empty> {
   return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
 }
 
