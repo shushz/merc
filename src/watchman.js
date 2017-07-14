@@ -5,10 +5,8 @@
  * @format
  */
 
-import type {Observable} from 'rxjs';
-
 import {Client} from 'fb-watchman';
-import {ReplaySubject} from 'rxjs';
+import {Observable, ReplaySubject} from 'rxjs';
 
 const client = new Client();
 
@@ -87,17 +85,14 @@ export function endWatchman(): void {
 }
 
 function runCommand(args: Array<mixed>): Observable<Object> {
-  const subj = new ReplaySubject(1);
-
-  client.command(args, (err, response) => {
-    if (err != null) {
-      subj.error(err);
-      return;
-    }
-
-    subj.next(response);
-    subj.complete();
-  });
-
-  return subj;
+  return Observable.create(observer => {
+    client.command(args, (err, response) => {
+      if (err != null) {
+        observer.error(err);
+        return;
+      }
+      observer.next(response);
+      observer.complete();
+    });
+  }).multicast(() => new ReplaySubject(1));
 }
