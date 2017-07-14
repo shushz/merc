@@ -16,6 +16,7 @@ import type {
 import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
 import {Observable} from 'rxjs';
+import {dfs} from './treeUtils';
 
 export class NotARepositoryError extends Error {
   constructor() {
@@ -301,7 +302,7 @@ export function moveSubtree(
     let shadowRoot;
     let currentShadowNode;
 
-    return Observable.from(walk(sourceRoot))
+    return Observable.from(dfs(sourceRoot))
       .concatMap(sourceNode => {
         const shadowParent = sourceNode.parent == null
           ? null
@@ -382,11 +383,4 @@ function createShadowCommitNode(
       children: [],
     };
   });
-}
-
-function* walk(tree: CommitNode): Generator<CommitNode, void, void> {
-  yield tree;
-  for (const child of tree.children) {
-    yield* walk(child);
-  }
 }
