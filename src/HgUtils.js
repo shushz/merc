@@ -66,10 +66,10 @@ export function getMergeBaseHash(
   repoRoot: string,
   hash: string = '.',
 ): Observable<string> {
-  return hg(
-    'log',
-    ['-r', `last(public() and ancestors(${hash}))`, '--template', '{node}'],
-    {cwd: repoRoot},
+  return log(
+    repoRoot,
+    `last(public() and ancestors(${hash}))`,
+    '{node}',
   ).map(out => out.trim());
 }
 
@@ -77,15 +77,10 @@ export function getSubtreeCommitList(
   repoRoot: string,
   hash: string = '.',
 ): Observable<string> {
-  return hg(
-    'log',
-    [
-      '-r',
-      `descendants(not public() and children(last(public() and ancestors(${hash})))) or last(public() and ancestors(${hash}))`,
-      '--template',
-      '----node\n{node}\n----p1node\n{p1node}\n----current\n{ifcontains(rev, revset("."), "1\n")}----phase\n{phase}\n----file_adds\n{file_adds % "{file}\n"}----file_copies\n{file_copies % "{source}\n{name}\n"}----file_dels\n{file_dels % "{file}\n"}----file_mods\n{file_mods % "{file}\n"}',
-    ],
-    {cwd: repoRoot},
+  return log(
+    repoRoot,
+    `descendants(not public() and children(last(public() and ancestors(${hash})))) or last(public() and ancestors(${hash}))`,
+    '----node\n{node}\n----p1node\n{p1node}\n----current\n{ifcontains(rev, revset("."), "1\n")}----phase\n{phase}\n----file_adds\n{file_adds % "{file}\n"}----file_copies\n{file_copies % "{source}\n{name}\n"}----file_dels\n{file_dels % "{file}\n"}----file_mods\n{file_mods % "{file}\n"}',
   );
 }
 
@@ -266,6 +261,14 @@ export function add(
   ...files: Array<string>
 ): Observable<empty> {
   return hg('add', files, {cwd: repoRoot}).ignoreElements();
+}
+
+export function log(
+  repoRoot: string,
+  revision: string,
+  template: string,
+): Observable<string> {
+  return hg('log', ['-r', revision, '--template', template], {cwd: repoRoot});
 }
 
 export function commit(repoRoot: string, message: string): Observable<empty> {
