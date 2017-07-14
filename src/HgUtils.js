@@ -299,6 +299,10 @@ export function transplant(
     .ignoreElements();
 }
 
+export function strip(repoRoot: string, hash: string): Observable<empty> {
+  return hg('strip', [hash], {cwd: repoRoot}).ignoreElements();
+}
+
 type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
   sourceRoot: CommitNode,
@@ -362,7 +366,7 @@ export function moveSubtree(
             console.log('Running strip ', node.hash);
             return Observable.empty();
           }),
-        // hg('strip', [node.hash], {cwd: sourceRepoRoot}),
+        // strip(sourceRepoRoot, node.hash),
       ),
     )
       .ignoreElements()
