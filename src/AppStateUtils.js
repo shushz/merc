@@ -5,12 +5,7 @@
  * @format
  */
 
-import type {
-  AppState,
-  InitializedAppState,
-  RepoState,
-  SerializedAppState,
-} from './types';
+import type {AppState, InitializedAppState, SerializedAppState} from './types';
 
 import {getRepoRoot} from './HgUtils';
 import {getShadowRepoRoot} from './RepoUtils';
@@ -45,9 +40,7 @@ export function getInitialAppState(
           initialized: false,
           wClock: null,
           sourceRepoRoot: repoRoot,
-          sourceRepoState: null,
           shadowRepoRoot,
-          shadowRepoState: null,
           shadowSubtree: null,
           shadowRootSources: null,
         });
@@ -61,16 +54,9 @@ export function getInitialAppState(
         return {
           initialized: true,
           wClock: serialized.wClock,
-
           sourceRepoRoot: repoRoot,
-          // TODO: REAL STUFF
-          sourceRepoState: ((null: any): RepoState),
-
           shadowRepoRoot,
-          // TODO: REAL STUFF
-          shadowRepoState: ((null: any): RepoState),
           shadowSubtree,
-
           shadowRootSources: new Map(serialized.shadowRootSources),
         };
       });
