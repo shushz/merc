@@ -46,14 +46,10 @@ function _copyIfExists(
 ): Observable<empty> {
   const sourceFileName = resolve(sourceRepo, name);
   const destFileName = resolve(targetRepo, name);
-  return Observable.defer(() =>
-    Observable.fromPromise(fsPromise.exists(sourceFileName)),
-  )
+  return Observable.defer(() => fsPromise.exists(sourceFileName))
     .switchMap(exists => {
       if (exists) {
-        return Observable.fromPromise(
-          fsPromise.copy(sourceFileName, destFileName),
-        );
+        return fsPromise.copy(sourceFileName, destFileName);
       }
       return Observable.empty();
     })
@@ -68,9 +64,7 @@ function _copyHgIgnores(
   return _hgIgnores(sourceRepo, paths)
     .switchMap(hgIgnores => {
       if (hgIgnores.size === 0) {
-        return Observable.fromPromise(
-          fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
-        );
+        return fsPromise.writeFile(resolve(targetRepo, '.hgignore'), '');
       }
 
       return Observable.from(hgIgnores).mergeMap(name =>
@@ -83,14 +77,10 @@ function _copyHgIgnores(
 function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
   return Observable.defer(() =>
     Observable.from(paths)
-      .mergeMap(path => {
+      .mergeMap(async path => {
         const name = resolve(path, '.hgignore');
-
-        return Observable.fromPromise(
-          fsPromise.exists(resolve(root, name)),
-        ).map(exists => {
-          return {name, exists};
-        });
+        const exists = await fsPromise.exists(resolve(root, name));
+        return {name, exists};
       })
       .filter(entry => entry.exists)
       .map(entry => entry.name)
@@ -106,9 +96,7 @@ function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
   return Observable.from(paths)
     .concatMap(path => {
       const pathToCreate = resolve(root, path);
-      return Observable.defer(() =>
-        Observable.fromPromise(fsPromise.mkdirp(pathToCreate)),
-      );
+      return Observable.defer(() => fsPromise.mkdirp(pathToCreate));
     })
     .ignoreElements();
 }
