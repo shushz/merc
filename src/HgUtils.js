@@ -97,6 +97,10 @@ export function setPhase(
   return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
 }
 
+export function isDirty(repoRoot: string): Observable<boolean> {
+  return hg('status', [], {cwd: repoRoot}).map(stdout => stdout.trim() !== '');
+}
+
 export function transplant(
   sourceRepoRoot: string,
   sourceHash: string,

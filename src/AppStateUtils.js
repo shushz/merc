@@ -5,14 +5,9 @@
  * @format
  */
 
-import type {
-  AppState,
-  InitializedAppState,
-  RepoState,
-  SerializedAppState,
-} from './types';
+import type {AppState, InitializedAppState, SerializedAppState} from './types';
 
-import {getRepoRoot} from './HgUtils';
+import {getRepoRoot, isDirty} from './HgUtils';
 import {getShadowRepoRoot} from './RepoUtils';
 import invariant from 'assert';
 import getSubtree from './subtree/getSubtree';
@@ -45,9 +40,7 @@ export function getInitialAppState(
           initialized: false,
           wClock: null,
           sourceRepoRoot: repoRoot,
-          sourceRepoState: null,
           shadowRepoRoot,
-          shadowRepoState: null,
           shadowSubtree: null,
           shadowRootSources: null,
         });
@@ -57,23 +50,19 @@ export function getInitialAppState(
         throw new Error('Repo was already initialized!');
       }
 
-      return getSubtree(shadowRepoRoot).map(shadowSubtree => {
-        return {
+      return Observable.forkJoin(
+        getSubtree(shadowRepoRoot),
+        isDirty(shadowRepoRoot),
+        (shadowSubtree, shadowIsDirty) => ({
           initialized: true,
           wClock: serialized.wClock,
-
           sourceRepoRoot: repoRoot,
-          // TODO: REAL STUFF
-          sourceRepoState: ((null: any): RepoState),
-
           shadowRepoRoot,
-          // TODO: REAL STUFF
-          shadowRepoState: ((null: any): RepoState),
           shadowSubtree,
-
+          shadowIsDirty,
           shadowRootSources: new Map(serialized.shadowRootSources),
-        };
-      });
+        }),
+      );
     });
 }
 

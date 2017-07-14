@@ -5,11 +5,6 @@
  * @format
  */
 
-export type RepoState = {
-  currentHash: string,
-  isDirty: ?boolean,
-};
-
 export type FileStatus = 'modified' | 'added' | 'deleted';
 
 export type CommitPhase = 'draft' | 'public';
@@ -23,10 +18,8 @@ export type UninitializedAppState = {|
   wClock: null,
 
   sourceRepoRoot: string,
-  sourceRepoState: null,
 
   shadowRepoRoot: string,
-  shadowRepoState: null,
   shadowSubtree: null,
 
   shadowRootSources: null,
@@ -39,12 +32,11 @@ export type InitializedAppState = {|
   wClock: string,
 
   sourceRepoRoot: string,
-  sourceRepoState: RepoState,
 
   // Info about the current shadow root.
   shadowRepoRoot: string,
-  shadowRepoState: RepoState,
   shadowSubtree: Subtree,
+  shadowIsDirty: boolean,
 
   // A map from the hashes of all shadow roots to their source commits.
   shadowRootSources: Map<string, string>,
