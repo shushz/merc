@@ -17,6 +17,13 @@ import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
 import {Observable} from 'rxjs';
 
+export class NotARepositoryError extends Error {
+  constructor() {
+    super('Command was run outside of an hg repository');
+    this.name = this.constructor.name;
+  }
+}
+
 function hg(
   subcommand: string,
   args: Array<string>,
@@ -28,12 +35,26 @@ function hg(
     return runCommand('hg', [subcommand, ...args], {
       ...options,
       env: {...process.env, ...options.env, HGPLAIN: '1'},
+    }).catch(err => {
+      if (
+        err.exitCode === 255 &&
+        typeof err.stderr === 'string' &&
+        err.stderr.startsWith('abort: no repository found in')
+      ) {
+        throw new NotARepositoryError();
+      }
+      throw err;
     });
   });
 }
 
 export function getRepoRoot(dir: string): Observable<?string> {
-  return hg('root', [], {cwd: dir}).map(out => out.trim());
+  return hg('root', [], {cwd: dir}).map(out => out.trim()).catch(err => {
+    if (err instanceof NotARepositoryError) {
+      return Observable.of(null);
+    }
+    throw err;
+  });
 }
 
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
