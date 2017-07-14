@@ -24,7 +24,7 @@ import {
 export function initShadowRepo(
   repoPath: string,
   baseFiles: Set<string>,
-): Observable<void> {
+): Observable<string> {
   const shadowRoot = resolve(repoPath, '.hg', 'merc');
   const paths = pathSetOfFiles(baseFiles);
 
@@ -34,7 +34,9 @@ export function initShadowRepo(
     .concat(_copyHgIgnores(repoPath, shadowRoot, paths))
     .concat(_makePublicCommit(shadowRoot, 'Initial commit'))
     .concat(_copyBaseFiles(repoPath, shadowRoot, baseFiles))
-    .concat(_makePublicCommit(shadowRoot, 'MergeBase commit'));
+    .concat(_makePublicCommit(shadowRoot, 'MergeBase commit'))
+    .ignoreElements()
+    .concat(Observable.of(shadowRoot));
 }
 
 function _copyIfExists(

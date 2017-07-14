@@ -10,7 +10,7 @@
  */
 
 import yargs from 'yargs';
-import {getRepoRoot, getSubtree} from './hgUtils';
+import {getRepoRoot, getSubtree, moveSubtree, update} from './hgUtils';
 import {dumpSubtree} from './debug';
 import getFileDependencies from './getFileDependencies';
 import {initShadowRepo} from './repoUtils';
@@ -28,7 +28,15 @@ yargs
           const baseFiles = getFileDependencies(subTree);
           console.log('The base files are: ', baseFiles);
 
-          return initShadowRepo(repoRoot, baseFiles);
+          return update(repoRoot, subTree.hash)
+            .concat(initShadowRepo(repoRoot, baseFiles))
+            .switchMap(shadowRepoRoot => {
+              return moveSubtree({
+                sourceRepoRoot: repoRoot,
+                sourceRoot: subTree,
+                destRepoRoot: shadowRepoRoot,
+              });
+            });
         });
       })
       .subscribe(

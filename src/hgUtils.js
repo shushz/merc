@@ -17,36 +17,23 @@ import invariant from 'assert';
 import {runCommand, ProcessExitError} from 'nuclide-commons/process.js';
 import {Observable} from 'rxjs';
 
-export class NotARepositoryError extends Error {
-  constructor() {
-    super('Command was run outside of an hg repository');
-    this.name = this.constructor.name;
-  }
-}
-
 function hg(
   subcommand: string,
   args: Array<string>,
   options: ObserveProcessOptions = {},
 ): Observable<string> {
-  return runCommand('hg', [subcommand, ...args], {
-    ...options,
-    env: {...process.env, ...options.env, HGPLAIN: '1'},
-  }).catch(err => {
-    if (err instanceof ProcessExitError && err.exitCode === 255) {
-      throw new NotARepositoryError();
-    }
-    throw err;
+  return Observable.defer(() => {
+    console.log('Running hg ', subcommand, args, ' at ', options.cwd);
+
+    return runCommand('hg', [subcommand, ...args], {
+      ...options,
+      env: {...process.env, ...options.env, HGPLAIN: '1'},
+    });
   });
 }
 
 export function getRepoRoot(dir: string): Observable<?string> {
-  return hg('root', [], {cwd: dir}).map(out => out.trim()).catch(err => {
-    if (err instanceof NotARepositoryError) {
-      return Observable.of(null);
-    }
-    throw err;
-  });
+  return hg('root', [], {cwd: dir}).map(out => out.trim());
 }
 
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
@@ -252,12 +239,19 @@ export function initRepo(root: string): Observable<void> {
   return hg('init', [root]).ignoreElements();
 }
 
-export function add(repoRoot: string, ...files: Array<string>): Observable<void> {
+export function add(
+  repoRoot: string,
+  ...files: Array<string>
+): Observable<void> {
   return hg('add', files, {cwd: repoRoot}).ignoreElements();
 }
 
 export function commit(repoRoot: string, message: string): Observable<void> {
   return hg('commit', ['-m', message], {cwd: repoRoot}).ignoreElements();
+}
+
+export function update(repoRoot: string, hash: string): Observable<empty> {
+  return hg('update', [hash], {cwd: repoRoot}).ignoreElements();
 }
 
 export function setPhase(
@@ -296,21 +290,22 @@ export function moveSubtree(
           sourceNode,
           destRepoRoot,
           shadowParent,
-        ).do(newShadowNode => {
-          // Keep track of which node in the source tree this one corresponds to.
-          sourceNodesToShadowNodes.set(sourceNode, newShadowNode);
+        )
+          .do(newShadowNode => {
+            // Keep track of which node in the source tree this one corresponds to.
+            sourceNodesToShadowNodes.set(sourceNode, newShadowNode);
 
-          if (shadowParent == null) {
-            shadowRoot = newShadowNode;
-          } else {
-            newShadowNode.parent = shadowParent;
-            shadowParent.children.push(newShadowNode);
-          }
-          if (newShadowNode.isCurrentRevision) {
-            currentShadowNode = newShadowNode;
-          }
-        })
-        .ignoreElements();
+            if (shadowParent == null) {
+              shadowRoot = newShadowNode;
+            } else {
+              newShadowNode.parent = shadowParent;
+              shadowParent.children.push(newShadowNode);
+            }
+            if (newShadowNode.isCurrentRevision) {
+              currentShadowNode = newShadowNode;
+            }
+          })
+          .ignoreElements();
       })
       .concat(
         Observable.defer(() => Observable.of({shadowRoot, currentShadowNode})),
@@ -320,8 +315,13 @@ export function moveSubtree(
       // Move to the current node in the shadow tree.
       hg('update', [currentShadowNode.hash], {cwd: destRepoRoot}),
       // Strip the non-public nodes from the source tree.
-      Observable.from(sourceRoot.children).concatMap(node =>
-        hg('strip', [node.hash], {cwd: sourceRepoRoot}),
+      Observable.from(sourceRoot.children).concatMap(
+        node =>
+          Observable.defer(() => {
+            console.log('Running strip ', node.hash);
+            return Observable.empty();
+          }),
+        // hg('strip', [node.hash], {cwd: sourceRepoRoot}),
       ),
     )
       .ignoreElements()
@@ -343,7 +343,9 @@ function createShadowCommitNode(
     invariant(destParentNode != null);
     firstAction = hg('update', [destParentNode.hash], {
       cwd: destRepoRoot,
-    }).concat(hg('import', ['-'], {input: patch, cwd: destRepoRoot}));
+    })
+      .concat(hg('import', ['-'], {input: patch, cwd: destRepoRoot}))
+      .ignoreElements();
   }
   return firstAction.concat(getCurrentRevisionHash(destRepoRoot)).map(hash => {
     return {
