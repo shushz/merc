@@ -10,7 +10,7 @@
 import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import getFileDependencies from '../getFileDependencies';
-import {getSubtree} from '../HgUtils';
+import getSubtree from '../getSubtree';
 
 test('getFileDependencies', async () => {
   const repoRoot = path.resolve(__dirname, './fixtures/repo3');
