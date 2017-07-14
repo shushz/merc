@@ -287,6 +287,18 @@ export function setPhase(
   return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
 }
 
+export function transplant(
+  sourceRepoRoot: string,
+  sourceHash: string,
+  destRepoRoot: string,
+): Observable<empty> {
+  return hg('export', ['-r', sourceHash], {
+    cwd: sourceRepoRoot,
+  })
+    .concatMap(patch => hg('import', ['-'], {input: patch, cwd: destRepoRoot}))
+    .ignoreElements();
+}
+
 type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
   sourceRoot: CommitNode,
@@ -370,11 +382,7 @@ function createShadowCommitNode(
       .concat(
         sourceNode.phase === 'public'
           ? Observable.empty()
-          : hg('export', ['-r', sourceNode.hash], {
-              cwd: sourceRepoRoot,
-            }).concatMap(patch =>
-              hg('import', ['-'], {input: patch, cwd: destRepoRoot}),
-            ),
+          : transplant(sourceRepoRoot, sourceNode.hash, destRepoRoot),
       )
       .ignoreElements()
       .concat(getCurrentRevisionHash(destRepoRoot))
