@@ -29,17 +29,17 @@ export function initShadowRepo(
   const paths = pathSetOfFiles(baseFiles);
 
   return initRepo(shadowRoot)
-    .concat(_copyIfExists(repoPath, shadowRoot, resolve('.hg', 'hgrc')))
-    .concat(_mkDirs(shadowRoot, paths))
-    .concat(_copyHgIgnores(repoPath, shadowRoot, paths))
-    .concat(_makePublicCommit(shadowRoot, 'Initial commit'))
-    .concat(_copyBaseFiles(repoPath, shadowRoot, baseFiles))
-    .concat(_makePublicCommit(shadowRoot, 'MergeBase commit'))
+    .concat(copyIfExists(repoPath, shadowRoot, resolve('.hg', 'hgrc')))
+    .concat(mkDirs(shadowRoot, paths))
+    .concat(copyHgIgnores(repoPath, shadowRoot, paths))
+    .concat(makePublicCommit(shadowRoot, 'Initial commit'))
+    .concat(copyBaseFiles(repoPath, shadowRoot, baseFiles))
+    .concat(makePublicCommit(shadowRoot, 'MergeBase commit'))
     .ignoreElements()
     .concat(Observable.of(shadowRoot));
 }
 
-function _copyIfExists(
+function copyIfExists(
   sourceRepo: string,
   targetRepo: string,
   name: string,
@@ -56,25 +56,25 @@ function _copyIfExists(
     .ignoreElements();
 }
 
-function _copyHgIgnores(
+function copyHgIgnores(
   sourceRepo: string,
   targetRepo: string,
   paths: Set<string>,
 ): Observable<empty> {
-  return _hgIgnores(sourceRepo, paths)
+  return hgIgnores(sourceRepo, paths)
     .switchMap(hgIgnores => {
       if (hgIgnores.size === 0) {
         return fsPromise.writeFile(resolve(targetRepo, '.hgignore'), '');
       }
 
       return Observable.from(hgIgnores).mergeMap(name =>
-        _copyIfExists(sourceRepo, targetRepo, name),
+        copyIfExists(sourceRepo, targetRepo, name),
       );
     })
     .ignoreElements();
 }
 
-function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
+function hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
   return Observable.from(paths)
     .mergeMap(async path => {
       const name = resolve(path, '.hgignore');
@@ -90,7 +90,7 @@ function _hgIgnores(root: string, paths: Set<string>): Observable<Set<string>> {
     }, new Set());
 }
 
-function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
+function mkDirs(root: string, paths: Set<string>): Observable<empty> {
   return Observable.from(paths)
     .concatMap(path => {
       const pathToCreate = resolve(root, path);
@@ -99,7 +99,7 @@ function _mkDirs(root: string, paths: Set<string>): Observable<empty> {
     .ignoreElements();
 }
 
-function _makePublicCommit(root: string, message: string): Observable<empty> {
+function makePublicCommit(root: string, message: string): Observable<empty> {
   return add(root, '.')
     .concat(commit(root, message))
     .concat(
@@ -110,7 +110,7 @@ function _makePublicCommit(root: string, message: string): Observable<empty> {
     .ignoreElements();
 }
 
-function _copyBaseFiles(
+function copyBaseFiles(
   sourceRepo: string,
   targetRepo: string,
   baseFiles: Set<string>,
@@ -122,6 +122,6 @@ function _copyBaseFiles(
   }
 
   return Observable.from(files)
-    .mergeMap(name => _copyIfExists(sourceRepo, targetRepo, name))
+    .mergeMap(name => copyIfExists(sourceRepo, targetRepo, name))
     .ignoreElements();
 }

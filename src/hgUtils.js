@@ -73,7 +73,7 @@ export function getMergeBaseHash(
   ).map(out => out.trim());
 }
 
-export function _getSubtreeCommitList(
+export function getSubtreeCommitList(
   repoRoot: string,
   hash: string = '.',
 ): Observable<string> {
@@ -113,7 +113,7 @@ const SUBTREE_COMMIT_LIST_SECTIONS = [
 /**
  * Parse the `_getSubtreeCommitList` into a Map of raw nodes.
  */
-export function _parseSubtreeCommitList(
+export function parseSubtreeCommitList(
   subtreeCommits: string,
 ): Set<RawCommitNode> {
   const lines = subtreeCommits.trim().split('\n');
@@ -211,7 +211,7 @@ export function _parseSubtreeCommitList(
   return nodes;
 }
 
-export function _buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
+export function buildTree(rawNodes: Set<RawCommitNode>): CommitNode {
   // Create a map of hashes to nodes. Later we'll mutate these nodes to set their parent and
   // children.
   const nodes = new Map();
@@ -252,9 +252,9 @@ export function getSubtree(
   repoRoot: string,
   hash: string = '.',
 ): Observable<CommitNode> {
-  return _getSubtreeCommitList(repoRoot, hash)
-    .map(_parseSubtreeCommitList)
-    .map(_buildTree);
+  return getSubtreeCommitList(repoRoot, hash)
+    .map(parseSubtreeCommitList)
+    .map(buildTree);
 }
 
 export function initRepo(root: string): Observable<empty> {
@@ -384,3 +384,8 @@ function createShadowCommitNode(
     };
   });
 }
+
+// Exported for testing.
+export const _getSubtreeCommitList = getSubtreeCommitList;
+export const _parseSubtreeCommitList = parseSubtreeCommitList;
+export const _buildTree = buildTree;

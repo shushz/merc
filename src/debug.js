@@ -11,7 +11,7 @@
 
 import type {CommitNode} from './types';
 
-function _decircleNode(node: CommitNode): Object {
+function decircleNode(node: CommitNode): Object {
   const children = node.children.map(child => _decircleNode(child));
   return {
     ...node,
