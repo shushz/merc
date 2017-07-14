@@ -7,6 +7,7 @@
 
 import type {CommitNode, ShadowCommitNode} from '../types';
 
+import debugLog from '../debugLog';
 import {getCurrentRevisionHash, transplant, update} from '../HgUtils';
 import {dfs} from '../TreeUtils';
 import {Observable} from 'rxjs';
@@ -71,8 +72,7 @@ export function moveSubtree(
       Observable.from(sourceRoot.children).concatMap(
         node =>
           Observable.defer(() => {
-            // eslint-disable-next-line no-console
-            console.log('Running strip ', node.hash);
+            debugLog('Running strip ', node.hash);
             return Observable.empty();
           }),
         // strip(sourceRepoRoot, node.hash),

@@ -8,6 +8,7 @@
 import type {ObserveProcessOptions} from 'nuclide-commons/process';
 import type {CommitPhase} from './types';
 
+import debugLog from './debugLog';
 import {runCommand} from 'nuclide-commons/process';
 import {Observable} from 'rxjs';
 
@@ -24,8 +25,7 @@ function hg(
   options: ObserveProcessOptions = {},
 ): Observable<string> {
   return Observable.defer(() => {
-    // eslint-disable-next-line no-console
-    console.log('Running hg ', subcommand, args, ' at ', options.cwd);
+    debugLog('Running hg ', subcommand, args, ' at ', options.cwd);
 
     return runCommand('hg', [subcommand, ...args], {
       ...options,

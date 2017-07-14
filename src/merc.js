@@ -8,6 +8,7 @@
 import yargs from 'yargs';
 import {getRepoRoot, update} from './HgUtils';
 import {dumpSubtree} from './debug';
+import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
 import {moveSubtree} from './subtree/moveSubtree';
@@ -17,17 +18,14 @@ import {compact} from 'nuclide-commons/observable';
 yargs
   .usage('$0 <cmd> [args]')
   .command('break', 'Start managing current branch with merc', argv => {
-    // eslint-disable-next-line no-console
-    console.log('Breaking stuff');
+    debugLog('Breaking stuff');
     compact(getRepoRoot(process.cwd()))
       .switchMap(repoRoot => {
-        // eslint-disable-next-line no-console
-        console.log('Repo root is: ', repoRoot);
+        debugLog('Repo root is: ', repoRoot);
 
         return getSubtree(repoRoot).switchMap(subtree => {
           const baseFiles = getFileDependencies(subtree);
-          // eslint-disable-next-line no-console
-          console.log('The base files are: ', baseFiles);
+          debugLog('The base files are: ', baseFiles);
 
           return update(repoRoot, subtree.hash)
             .concat(initShadowRepo(repoRoot, baseFiles))
@@ -47,7 +45,7 @@ yargs
         err => console.error(err),
         () => {
           // eslint-disable-next-line no-console
-          console.log('Done!');
+          debugLog('Done!');
         },
       );
   })
