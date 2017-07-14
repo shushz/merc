@@ -37,7 +37,6 @@ export type RawCommitNode = {|
 
 export type CommitNode = {|
   hash: string,
-  parentHash: ?string,
   isCurrentRevision: boolean,
   phase: CommitPhase,
   addedFiles: Set<string>,
