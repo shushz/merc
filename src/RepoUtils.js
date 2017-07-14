@@ -17,11 +17,15 @@ import {
   setPhase,
 } from './HgUtils';
 
+export function getShadowRepoRoot(repoRoot: string): string {
+  return resolve(repoRoot, '.hg', 'merc');
+}
+
 export function initShadowRepo(
   repoPath: string,
   baseFiles: Set<string>,
 ): Observable<string> {
-  const shadowRoot = resolve(repoPath, '.hg', 'merc');
+  const shadowRoot = getShadowRepoRoot(repoPath);
   const paths = pathSetOfFiles(baseFiles);
 
   return initRepo(shadowRoot)
