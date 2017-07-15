@@ -9,6 +9,7 @@ import debugLog from './debugLog';
 import {Client} from 'fb-watchman';
 import {Observable} from 'rxjs';
 import {resolve, relative} from 'path';
+import fsPromise from 'nuclide-commons/fsPromise';
 
 const client = new Client();
 
@@ -44,6 +45,59 @@ export function getClock(repoRoot: string): Observable<string> {
   return runCommand(['watch-project', repoRoot])
     .switchMap(response => runCommand(['clock', response.watch]))
     .map(response => ((response: any): WatchmanClockResponse).clock);
+}
+
+export function getClockVerify(repoRoot: string): Observable<string> {
+  const fileName = '__some__very__arbitrary__file__name__';
+  const testFile = resolve(repoRoot, fileName);
+  return runCommand(['watch-project', repoRoot]).switchMap(response => {
+    return subscribe(response.watch, fileName)
+      .switchMap(obs =>
+        Observable.merge(
+          obs,
+          Observable.defer(() =>
+            fsPromise.writeFile(testFile, ''),
+          ).ignoreElements(),
+        ),
+      )
+      .filter(res => {
+        const testedFile = res.files.find(file => file.name === fileName);
+        if (testedFile != null && testedFile.exists) {
+          fsPromise.unlink(testFile);
+        }
+        return testedFile != null && testedFile.exists === false;
+      })
+      .map(res => {
+        return res.files.find(file => file.name === fileName).oclock;
+      })
+      .take(1)
+      .switchMap(clock => {
+        return runCommand([
+          'unsubscribe',
+          response.watch,
+          'verifySubscription',
+        ]).mapTo(clock);
+      });
+  });
+}
+
+function subscribe(
+  watch: string,
+  fileName: string,
+): Observable<Observable<WatchmanResult>> {
+  const sub = {
+    expression: ['name', fileName],
+    fields: ['exists', 'name', 'oclock'],
+  };
+
+  return runCommand(['subscribe', watch, 'verifySubscription', sub]).map(() => {
+    return Observable.fromEventPattern(
+      handler => {
+        client.on('subscription', handler);
+      },
+      handler => {},
+    );
+  });
 }
 
 export function getChanges(

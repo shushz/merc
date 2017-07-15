@@ -20,7 +20,7 @@ import {
   getUninitializedAppState,
   saveState,
 } from './AppStateUtils';
-import {initShadowRepo} from './RepoUtils';
+import {initShadowRepo, getShadowRepoRoot} from './RepoUtils';
 import {Observable} from 'rxjs';
 import {startTrackingChangesForSync, sync, syncTracked} from './sync';
 import {endWatchman} from './watchman';
@@ -37,41 +37,54 @@ yargs
   .command('break', 'Start managing current branch with merc', argv => {
     debugLog('Breaking stuff');
     run(
-      getUninitializedAppState().switchMap(appState => {
-        const {sourceRepoRoot} = appState;
-        debugLog('Repo root is: ', sourceRepoRoot);
+      getUninitializedAppState()
+        .switchMap(appState => {
+          const {sourceRepoRoot} = appState;
+          debugLog('Repo root is: ', sourceRepoRoot);
 
-        return getSubtree(sourceRepoRoot)
-          .switchMap(sourceSubtree => {
-            const sourceRoot = sourceSubtree.root;
-            const baseFiles = getFileDependencies(sourceRoot);
-            debugLog('The base files are: ', baseFiles);
-            debugLog(sourceRepoRoot, sourceRoot.hash);
-            return update(sourceRepoRoot, sourceRoot.hash)
-              .concat(initShadowRepo(sourceRepoRoot, baseFiles))
-              .switchMap(shadowRepoRoot =>
-                Observable.concat(
-                  startTrackingChangesForSync(shadowRepoRoot, trackedSyncState),
-                  moveSubtree({
-                    sourceRepoRoot,
-                    sourceRoot,
-                    currentHash: sourceSubtree.currentCommit.hash,
-                    destRepoRoot: shadowRepoRoot,
-                    destParentHash: '.',
-                  }),
-                  syncTracked(shadowRepoRoot, sourceRepoRoot, trackedSyncState),
-                ),
-              )
-              .map(shadowRoot => ({shadowRoot, sourceRoot}));
-          })
-          .map(({shadowRoot, sourceRoot}) => {
-            return {
-              ...appState,
-              initialized: true,
-              shadowRootSources: new Map([[shadowRoot.hash, sourceRoot.hash]]),
-            };
-          });
-      }),
+          return getSubtree(sourceRepoRoot)
+            .switchMap(sourceSubtree => {
+              const sourceRoot = sourceSubtree.root;
+              const baseFiles = getFileDependencies(sourceRoot);
+              debugLog('The base files are: ', baseFiles);
+              debugLog(sourceRepoRoot, sourceRoot.hash);
+              return update(sourceRepoRoot, sourceRoot.hash)
+                .concat(initShadowRepo(sourceRepoRoot, baseFiles))
+                .switchMap(shadowRepoRoot => {
+                  return startTrackingChangesForSync(
+                    shadowRepoRoot,
+                    trackedSyncState,
+                  )
+                    .concat(
+                      moveSubtree({
+                        sourceRepoRoot,
+                        sourceRoot,
+                        currentHash: sourceSubtree.currentCommit.hash,
+                        destRepoRoot: shadowRepoRoot,
+                        destParentHash: '.',
+                      }),
+                    )
+                    .switchMap(shadowRoot => {
+                      return syncTracked(
+                        shadowRepoRoot,
+                        sourceRepoRoot,
+                        trackedSyncState,
+                      ).concat(Observable.of(shadowRoot));
+                    });
+                })
+                .map(shadowRoot => ({shadowRoot, sourceRoot}));
+            })
+            .map(({shadowRoot, sourceRoot}) => {
+              return {
+                ...appState,
+                initialized: true,
+                shadowRootSources: new Map([
+                  [shadowRoot.hash, sourceRoot.hash],
+                ]),
+              };
+            });
+        })
+        .finally(() => debugLog('Finished running the command')),
     );
   })
   .command(
@@ -148,32 +161,44 @@ if (!commandWasHandled) {
       );
       invariant(sourceHash);
 
-      return (
-        // sync(
-        //   appState.sourceRepoRoot,
-        //   appState.shadowSubtree,
-        //   sourceHash,
-        //   appState.shadowIsDirty,
-        //   appState.wClock,
-        // )
-        Observable.of(null)
-          .switchMap(() => {
-            debugLog(`Forwarding hg command: ${yargs.argv._}`);
-            return spawn('hg', yargs.argv._, {
+      const shadowRepoRoot = getShadowRepoRoot(appState.sourceRepoRoot);
+
+      return sync(
+        appState.sourceRepoRoot,
+        appState.shadowSubtree,
+        sourceHash,
+        appState.shadowIsDirty,
+        appState.wClock,
+      ).switchMap(newState => {
+        debugLog(`Forwarding hg command: ${yargs.argv._}`);
+        return startTrackingChangesForSync(shadowRepoRoot, trackedSyncState)
+          .concat(
+            spawn('hg', yargs.argv._, {
               stdio: 'inherit',
               cwd: appState.shadowRepoRoot,
-            })
-              .switchMap(proc =>
-                Observable.fromEvent(proc, 'close').do(exitCode => {
-                  if (exitCode !== 0) {
-                    throw new ForwardedCommandError(exitCode, proc);
-                  }
-                }),
-              )
-              .ignoreElements();
-          })
-          .concat(Observable.of(appState))
-      );
+            }),
+          )
+          .do({complete: () => debugLog('1')})
+          .switchMap(proc =>
+            Observable.fromEvent(proc, 'close')
+              .do(exitCode => {
+                if (exitCode !== 0) {
+                  throw new ForwardedCommandError(exitCode, proc);
+                }
+              })
+              .take(1),
+          )
+          .do({complete: () => debugLog('2')})
+          .ignoreElements()
+          .concat(
+            syncTracked(
+              shadowRepoRoot,
+              appState.sourceRepoRoot,
+              trackedSyncState,
+            ).do({complete: () => debugLog('3')}),
+            Observable.of(newState),
+          );
+      });
     }),
   );
 }

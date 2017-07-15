@@ -17,7 +17,7 @@ import {getShadowRepoRoot} from './RepoUtils';
 import invariant from 'assert';
 import debugLog from './debugLog';
 import getSubtree from './subtree/getSubtree';
-import {getClock} from './watchman';
+import {getClockVerify} from './watchman';
 import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import {Observable} from 'rxjs';
@@ -104,7 +104,7 @@ function loadSerializedState(
 export function saveState(state: SerializableAppState): Observable<empty> {
   const {shadowRepoRoot, sourceRepoRoot} = state;
   return (
-    getClock(sourceRepoRoot)
+    getClockVerify(sourceRepoRoot)
       // Update the clock.
       .map(wClock => ({...state, wClock}))
       .map(finalState => ({

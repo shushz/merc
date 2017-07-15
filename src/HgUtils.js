@@ -146,7 +146,10 @@ export function copyByCat(
   return hg(
     'cat',
     ['-r', hash, '--output', `${targetPrefix}${sep}%p`, ...Array.from(files)],
-    {cwd: repoRoot},
+    {
+      cwd: repoRoot,
+      isExitError: msg => msg.exitCode !== 0 && msg.exitCode !== 1,
+    },
   ).ignoreElements();
 }
 
