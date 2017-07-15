@@ -170,10 +170,11 @@ if (!commandWasHandled) {
         appState.shadowIsDirty,
         appState.wClock,
       ).switchMap(newState => {
-        debugLog(`Forwarding hg command: ${yargs.argv._}`);
+        const args = process.argv.slice(2);
+        debugLog(`Forwarding hg command: ${args}`);
         return startTrackingChangesForSync(shadowRepoRoot, trackedSyncState)
           .concat(
-            spawn('hg', yargs.argv._, {
+            spawn('hg', args, {
               stdio: 'inherit',
               cwd: appState.shadowRepoRoot,
             }),
