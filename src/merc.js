@@ -50,9 +50,7 @@ yargs
             return {
               ...appState,
               initialized: true,
-              shadowRootSources: new Map([
-                [shadowRoot.hash, sourceRoot.hash],
-              ]),
+              shadowRootSources: new Map([[shadowRoot.hash, sourceRoot.hash]]),
             };
           });
       }),
