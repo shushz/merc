@@ -5,8 +5,9 @@
  * @format
  */
 
+import debugLog from './debugLog';
 import {Client} from 'fb-watchman';
-import {Observable, ReplaySubject} from 'rxjs';
+import {Observable} from 'rxjs';
 
 const client = new Client();
 
@@ -40,7 +41,7 @@ export type WatchmanResult = {|
 export function getClock(repoRoot: string): Observable<string> {
   // Start watching the project, if it isn't already.
   return runCommand(['watch-project', repoRoot])
-    .switchMap(() => runCommand(['clock', repoRoot]))
+    .switchMap(response => runCommand(['clock', response.watch]))
     .map(response => ((response: any): WatchmanClockResponse).clock);
 }
 
@@ -48,37 +49,42 @@ export function getChanges(
   path: string,
   sinceClock: string,
 ): Observable<WatchmanResult> {
-  return runCommand([
-    'query',
-    path,
-    {
-      since: sinceClock,
-      expression: ['type', 'f'],
-      fields: ['new', 'exists', 'name'],
-      empty_on_fresh_instance: true,
-    },
-  ]).map(response => {
-    const clock = response.clock;
-    const overflown = response.is_fresh_instance;
+  return runCommand(['watch-project', path])
+    .map(response => response.watch)
+    .switchMap(watchDir =>
+      runCommand([
+        'query',
+        watchDir,
+        {
+          since: sinceClock,
+          expression: ['type', 'f'],
+          fields: ['new', 'exists', 'name'],
+          empty_on_fresh_instance: true,
+        },
+      ]),
+    )
+    .map(response => {
+      const clock = response.clock;
+      const overflown = response.is_fresh_instance;
 
-    const filesAdded = new Set();
-    const filesDeleted = new Set();
-    const filesModified = new Set();
+      const filesAdded = new Set();
+      const filesDeleted = new Set();
+      const filesModified = new Set();
 
-    response.files.forEach(file => {
-      if (file.new) {
-        if (file.exists) {
-          filesAdded.add(file.name);
+      response.files.forEach(file => {
+        if (file.new) {
+          if (file.exists) {
+            filesAdded.add(file.name);
+          }
+        } else if (file.exists) {
+          filesModified.add(file.name);
+        } else {
+          filesDeleted.add(file.name);
         }
-      } else if (file.exists) {
-        filesModified.add(file.name);
-      } else {
-        filesDeleted.add(file.name);
-      }
-    });
+      });
 
-    return {clock, overflown, filesAdded, filesDeleted, filesModified};
-  });
+      return {clock, overflown, filesAdded, filesDeleted, filesModified};
+    });
 }
 
 export function endWatchman(): void {
@@ -87,6 +93,7 @@ export function endWatchman(): void {
 
 function runCommand(args: Array<mixed>): Observable<Object> {
   return Observable.create(observer => {
+    debugLog('watchman', args);
     client.command(args, (err, response) => {
       if (err != null) {
         observer.error(err);
@@ -95,5 +102,5 @@ function runCommand(args: Array<mixed>): Observable<Object> {
       observer.next(response);
       observer.complete();
     });
-  }).multicast(() => new ReplaySubject(1));
+  });
 }
