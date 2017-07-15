@@ -7,6 +7,7 @@
 
 import type {SerializableAppState} from './types';
 
+import invariant from 'assert';
 import yargs from 'yargs';
 import {update} from './HgUtils';
 import {dumpSubtree} from './debug';
@@ -14,7 +15,11 @@ import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
 import {moveSubtree} from './subtree/moveSubtree';
-import {getUninitializedAppState, saveState} from './AppStateUtils';
+import {
+  getInitializedAppState,
+  getUninitializedAppState,
+  saveState,
+} from './AppStateUtils';
 import {initShadowRepo} from './RepoUtils';
 import {Observable} from 'rxjs';
 
@@ -56,6 +61,41 @@ yargs
       }),
     );
   })
+  .command(
+    'unbreak',
+    'Stop managing current branch with merc and reattach it to the main repository',
+    argv => {
+      debugLog('Unbreaking stuff');
+      run(
+        getInitializedAppState().switchMap(appState => {
+          const {sourceRepoRoot} = appState;
+          debugLog('Repo root is: ', sourceRepoRoot);
+          const shadowRoot = appState.shadowSubtree.root;
+          const shadowRootHash = shadowRoot.hash;
+          const mainRootHash = appState.shadowRootSources.get(shadowRootHash);
+          invariant(mainRootHash != null);
+
+          // Move the shadow repo back to the main one.
+          return moveSubtree({
+            sourceRepoRoot: appState.shadowRepoRoot,
+            sourceRoot: appState.shadowSubtree.root,
+            currentHash: appState.shadowSubtree.currentCommit.hash,
+            destRepoRoot: appState.sourceRepoRoot,
+            destParentHash: mainRootHash,
+          }).map(() => {
+            // Now that the shadow root is gone, we no longer need to remember where it came from.
+            const shadowRootSources = new Map(appState.shadowRootSources);
+            shadowRootSources.delete(shadowRootHash);
+            return {
+              sourceRepoRoot: appState.sourceRepoRoot,
+              shadowRepoRoot: appState.shadowRepoRoot,
+              shadowRootSources,
+            };
+          });
+        }),
+      );
+    },
+  )
   .command('debug', 'Options: getSubtree', ({argv}) => {
     if (argv._[1] === 'getSubtree') {
       getSubtree(process.cwd()).subscribe(res => dumpSubtree(res));
