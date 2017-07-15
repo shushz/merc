@@ -9,7 +9,7 @@ import type {SerializableAppState} from './types';
 
 import invariant from 'assert';
 import yargs from 'yargs';
-import {update} from './HgUtils';
+import {purge, revertAll, update} from './HgUtils';
 import {dumpSubtree} from './debug';
 import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
@@ -102,13 +102,17 @@ yargs
           invariant(mainRootHash != null);
 
           // Move the shadow repo back to the main one.
-          return moveSubtree({
-            sourceRepoRoot: appState.shadowRepoRoot,
-            sourceRoot: appState.shadowSubtree.root,
-            currentHash: appState.shadowSubtree.currentCommit.hash,
-            destRepoRoot: appState.sourceRepoRoot,
-            destParentHash: mainRootHash,
-          }).map(() => {
+          return Observable.concat(
+            revertAll(appState.sourceRepoRoot),
+            purge(appState.sourceRepoRoot),
+            moveSubtree({
+              sourceRepoRoot: appState.shadowRepoRoot,
+              sourceRoot: appState.shadowSubtree.root,
+              currentHash: appState.shadowSubtree.currentCommit.hash,
+              destRepoRoot: appState.sourceRepoRoot,
+              destParentHash: mainRootHash,
+            }),
+          ).map(() => {
             // Now that the shadow root is gone, we no longer need to remember where it came from.
             const shadowRootSources = new Map(appState.shadowRootSources);
             shadowRootSources.delete(shadowRootHash);

@@ -162,3 +162,11 @@ export function rebase(
     cwd: repoRoot,
   }).ignoreElements();
 }
+
+export function revertAll(repoRoot: string): Observable<empty> {
+  return hg('revert', ['--all'], {cwd: repoRoot}).ignoreElements();
+}
+
+export function purge(repoRoot: string): Observable<empty> {
+  return hg('purge', ['.'], {cwd: repoRoot}).ignoreElements();
+}
