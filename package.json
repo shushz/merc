@@ -30,13 +30,13 @@
     "split": "1.0.0"
   },
   "scripts": {
-    "debug": "node node_modules/babel-watch/babel-watch.js --debug 5858 src/cli.js",
-    "lint": "node node_modules/.bin/eslint --max-warnings=0 .",
-    "watch": "node --trace-deprecation node_modules/babel-watch/babel-watch.js src/cli.js",
-    "test": "node node_modules/.bin/jest"
+    "lint": "eslint --max-warnings=0 .",
+    "build": "babel src --out-dir lib --ignore '**/__tests__/**'",
+    "watch": "babel -w src --out-dir lib --ignore '**/__tests__/**'",
+    "test": "jest"
   },
   "bin": {
-    "merc": "./src/cli.js"
+    "merc": "./lib/cli.js"
   },
   "jest": {
     "testEnvironment": "node",

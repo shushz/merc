@@ -2,3 +2,4 @@
 **/fixtures/**/.hg/blackbox.log
 **/fixtures/**/.hg/undo.dirstate
 **/fixtures/**/.hg/undo.desc
+/lib
