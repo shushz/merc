@@ -14,7 +14,7 @@ import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
 import {moveSubtree} from './subtree/moveSubtree';
-import {getInitialAppState, saveState} from './AppStateUtils';
+import {getUninitializedAppState, saveState} from './AppStateUtils';
 import {initShadowRepo} from './RepoUtils';
 import {Observable} from 'rxjs';
 
@@ -23,7 +23,7 @@ yargs
   .command('break', 'Start managing current branch with merc', argv => {
     debugLog('Breaking stuff');
     run(
-      getInitialAppState(false).switchMap(appState => {
+      getUninitializedAppState().switchMap(appState => {
         const {sourceRepoRoot} = appState;
         debugLog('Repo root is: ', sourceRepoRoot);
 

@@ -5,7 +5,12 @@
  * @format
  */
 
-import type {AppState, SerializableAppState, SerializedAppState} from './types';
+import type {
+  InitializedAppState,
+  SerializableAppState,
+  SerializedAppState,
+  UninitializedAppState,
+} from './types';
 
 import {getRepoRoot, isDirty} from './HgUtils';
 import {getShadowRepoRoot} from './RepoUtils';
@@ -17,36 +22,25 @@ import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import {Observable} from 'rxjs';
 
-/**
- * Examine the repo and return the current state.
- */
-export function getInitialAppState(
-  expectInitialized: boolean = true,
-): Observable<AppState> {
-  return getRepoRoot()
-    .switchMap(repoRoot => {
-      const shadowRepoRoot = getShadowRepoRoot(repoRoot);
-      return loadSerializedState(shadowRepoRoot).map(serialized => ({
-        serialized,
-        repoRoot,
-        shadowRepoRoot,
-      }));
-    })
+export function getUninitializedAppState(): Observable<UninitializedAppState> {
+  return discover().map(({serialized, repoRoot, shadowRepoRoot}) => {
+    if (serialized != null) {
+      throw new Error('Repo was already initialized!');
+    }
+
+    return {
+      initialized: false,
+      sourceRepoRoot: repoRoot,
+      shadowRepoRoot,
+    };
+  });
+}
+
+export function getInitializedAppState(): Observable<InitializedAppState> {
+  return discover()
     .switchMap(({serialized, repoRoot, shadowRepoRoot}) => {
       if (serialized == null) {
-        // The repo hasn't been initialized yet.
-        if (expectInitialized) {
-          throw new Error("Repo hasn't been initialized yet!");
-        }
-        return Observable.of({
-          initialized: false,
-          sourceRepoRoot: repoRoot,
-          shadowRepoRoot,
-        });
-      }
-
-      if (!expectInitialized) {
-        throw new Error('Repo was already initialized!');
+        throw new Error("Repo hasn't been initialized yet!");
       }
 
       return Observable.forkJoin(
@@ -66,6 +60,20 @@ export function getInitialAppState(
     .do(appState => {
       debugLog('Initial State: ', JSON.stringify(appState));
     });
+}
+
+/**
+ * Examine the repository to discover all we can about it.
+ */
+function discover() {
+  return getRepoRoot().switchMap(repoRoot => {
+    const shadowRepoRoot = getShadowRepoRoot(repoRoot);
+    return loadSerializedState(shadowRepoRoot).map(serialized => ({
+      serialized,
+      repoRoot,
+      shadowRepoRoot,
+    }));
+  });
 }
 
 function loadSerializedState(
