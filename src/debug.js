@@ -7,21 +7,20 @@
 
 import type {CommitNode, Subtree} from './types';
 
-function decircleNode(node: CommitNode): Object {
-  const children = node.children.map(child => decircleNode(child));
-  return {
+function prepareNode(node: CommitNode): Object {
+  const prepared = {
     ...node,
-    children,
+    children: node.children.map(child => prepareNode(child)),
     addedFiles: Array.from(node.addedFiles),
     copiedFiles: Array.from(node.copiedFiles),
     modifiedFiles: Array.from(node.modifiedFiles),
     deletedFiles: Array.from(node.deletedFiles),
-    parent: null,
   };
+  delete prepared.parent;
+  return prepared;
 }
 
 export function dumpSubtree(tree: Subtree): void {
-  const decircled = decircleNode(tree.root);
   // eslint-disable-next-line no-console
-  console.log(JSON.stringify(decircled, null, 4));
+  console.log(JSON.stringify(prepareNode(tree.root), null, 2));
 }
