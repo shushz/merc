@@ -10,7 +10,7 @@ import type {Subtree, SerializableAppState} from './types';
 
 import {Observable} from 'rxjs';
 import {getChanges} from './watchman';
-import {resolve, relative} from 'path';
+import {resolve, join, relative} from 'path';
 import debugLog from './debugLog';
 import {MERC_PREFIX, hgIgnores, getShadowRepoRoot} from './RepoUtils';
 import {pathSetOfFiles} from './PathSetUtils';
@@ -45,7 +45,7 @@ type ChangeSummary = {
   deletions: Set<string>,
 };
 
-const MERC_HG_PREFIX = resolve(MERC_PREFIX, '.hg');
+const MERC_HG_PREFIX = join(MERC_PREFIX, '.hg');
 
 export function sync(
   sourceRepo: string,
@@ -256,6 +256,7 @@ function makeAddFiles(
     changeSummary.newFilesForBase,
   )
     .concat(add(shadowRepoPath, '.'))
+    .concat(setPhase(shadowRepoPath, 'draft', '.'))
     .concat(amend(shadowRepoPath))
     .concat(setPhase(shadowRepoPath, 'public', '.'))
     .concat(

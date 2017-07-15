@@ -6,7 +6,7 @@
  */
 
 import {Observable} from 'rxjs';
-import {resolve} from 'path';
+import {join, resolve} from 'path';
 import fsPromise from 'nuclide-commons/fsPromise';
 import {pathSetOfFiles} from './PathSetUtils';
 import {
@@ -17,7 +17,7 @@ import {
   setPhase,
 } from './HgUtils';
 
-export const MERC_PREFIX = resolve('.hg', 'merc');
+export const MERC_PREFIX = join('.hg', 'merc');
 
 export function getShadowRepoRoot(repoRoot: string): string {
   return resolve(repoRoot, MERC_PREFIX);
@@ -31,7 +31,7 @@ export function initShadowRepo(
   const paths = pathSetOfFiles(baseFiles);
 
   return initRepo(shadowRoot)
-    .concat(copyIfExists(repoPath, shadowRoot, resolve('.hg', 'hgrc')))
+    .concat(copyIfExists(repoPath, shadowRoot, join('.hg', 'hgrc')))
     .concat(mkDirs(shadowRoot, paths))
     .concat(writeEmptyHgIgnore(shadowRoot))
     .concat(makePublicCommit(shadowRoot, 'Initial commit'))
