@@ -49,7 +49,7 @@ export function getRepoRoot(dir_?: string): Observable<string> {
 }
 
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
-  return hg('id', ['-i', '--debug'], {cwd: repoRoot}).map(out => out.trim());
+  return log(repoRoot, '.', '{node}').map(out => out.trim());
 }
 
 export function getMergeBaseHash(
@@ -99,7 +99,9 @@ export function setPhase(
   phase: CommitPhase,
   hash: string,
 ): Observable<empty> {
-  return hg('phase', [`--${phase}`, hash], {cwd: repoRoot}).ignoreElements();
+  return hg('phase', [`--${phase}`, '-f', hash], {
+    cwd: repoRoot,
+  }).ignoreElements();
 }
 
 export function isDirty(repoRoot: string): Observable<boolean> {
