@@ -22,8 +22,12 @@ import {
 } from './AppStateUtils';
 import {initShadowRepo} from './RepoUtils';
 import {Observable} from 'rxjs';
-import {sync} from './sync';
+import {startTrackingChangesForSync, sync, syncTracked} from './sync';
 import {endWatchman} from './watchman';
+
+const trackedSyncState = {
+  clock: '',
+};
 
 yargs
   .usage('$0 <cmd> [args]')
@@ -43,13 +47,17 @@ yargs
             return update(sourceRepoRoot, sourceRoot.hash)
               .concat(initShadowRepo(sourceRepoRoot, baseFiles))
               .switchMap(shadowRepoRoot =>
-                moveSubtree({
-                  sourceRepoRoot,
-                  sourceRoot,
-                  currentHash: sourceSubtree.currentCommit.hash,
-                  destRepoRoot: shadowRepoRoot,
-                  destParentHash: '.',
-                }),
+                Observable.concat(
+                  startTrackingChangesForSync(shadowRepoRoot, trackedSyncState),
+                  moveSubtree({
+                    sourceRepoRoot,
+                    sourceRoot,
+                    currentHash: sourceSubtree.currentCommit.hash,
+                    destRepoRoot: shadowRepoRoot,
+                    destParentHash: '.',
+                  }),
+                  syncTracked(shadowRepoRoot, sourceRepoRoot, trackedSyncState),
+                ),
               )
               .map(shadowRoot => ({shadowRoot, sourceRoot}));
           })

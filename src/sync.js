@@ -9,10 +9,10 @@ import type {WatchmanResult} from './watchman';
 import type {Subtree, SerializableAppState} from './types';
 
 import {Observable} from 'rxjs';
-import {getChanges} from './watchman';
-import {resolve, join, relative} from 'path';
+import {getChanges, getClock} from './watchman';
+import {resolve, relative} from 'path';
 import debugLog from './debugLog';
-import {MERC_PREFIX, hgIgnores, getShadowRepoRoot} from './RepoUtils';
+import {hgIgnores, getShadowRepoRoot} from './RepoUtils';
 import {pathSetOfFiles} from './PathSetUtils';
 import {
   add,
@@ -28,15 +28,22 @@ import {
 import {getPathToCurrent, getByPath} from './subtree/SubtreePath';
 import getSubtree from './subtree/getSubtree';
 
-import {setUnion, setDifference} from 'nuclide-commons/collection';
+import {
+  concatIterators,
+  filterIterable,
+  setUnion,
+  setDifference,
+} from 'nuclide-commons/collection';
 import fsPromise from 'nuclide-commons/fsPromise';
+
+export type TrackedSyncState = {
+  clock: string,
+};
 
 type GrouppedChanges = {
   sourceWorkspaceChanged: Set<string>,
   sourceWorkspaceDeleted: Set<string>,
   sourceHg: Set<string>,
-  targetWorkspace: Set<string>,
-  targetHg: Set<string>,
 };
 
 type ChangeSummary = {
@@ -45,7 +52,24 @@ type ChangeSummary = {
   deletions: Set<string>,
 };
 
-const MERC_HG_PREFIX = join(MERC_PREFIX, '.hg');
+export function startTrackingChangesForSync(
+  repoRoot: string,
+  state: TrackedSyncState,
+): Observable<empty> {
+  return getClock(repoRoot).do(clock => (state.clock = clock)).ignoreElements();
+}
+
+export function syncTracked(
+  sourceRepo: string,
+  targetRepo: string,
+  state: TrackedSyncState,
+): Observable<empty> {
+  return Observable.defer(() =>
+    makeTrackedSyncSummary(sourceRepo, state.clock),
+  ).switchMap(({changes, deletions}) => {
+    return makeSyncFiles(sourceRepo, targetRepo, changes, deletions);
+  });
+}
 
 export function sync(
   sourceRepo: string,
@@ -73,7 +97,12 @@ export function sync(
       shadowSubtree,
     );
 
-    const syncFiles = makeSyncFiles(sourceRepo, shadowRepoPath, changeSummary);
+    const syncFiles = makeSyncFiles(
+      sourceRepo,
+      shadowRepoPath,
+      changeSummary.changes,
+      changeSummary.deletions,
+    );
 
     return Observable.concat(
       preAdd,
@@ -132,6 +161,25 @@ function makeChangeSummary(
     });
 }
 
+function makeTrackedSyncSummary(
+  sourceRepo: string,
+  clock: string,
+): Observable<{changes: Set<string>, deletions: Set<string>}> {
+  return getChanges(sourceRepo, clock).map(watchmanResult => {
+    const filterOutHg = iterable =>
+      filterIterable(iterable, name => !name.startsWith('.hg'));
+    const changes = new Set(
+      concatIterators(
+        filterOutHg(watchmanResult.filesAdded),
+        filterOutHg(watchmanResult.filesModified),
+      ),
+    );
+
+    const deletions = new Set(filterOutHg(watchmanResult.filesDeleted));
+    return {changes, deletions};
+  });
+}
+
 function checkForInvariantViolations(
   overflown: boolean,
   grouppedChanges: GrouppedChanges,
@@ -151,39 +199,15 @@ function checkForInvariantViolations(
         Array.from(grouppedChanges.sourceHg).join(', '),
     );
   }
-
-  if (grouppedChanges.targetHg.size !== 0) {
-    // May signal a problem! In the mean time, while we don't have a complete wrapping, we'll just
-    // print
-    debugLog(
-      'Detected unexpected changes in target .hg!' +
-        Array.from(grouppedChanges.targetHg).join(', '),
-    );
-  }
-
-  if (grouppedChanges.targetWorkspace.size !== 0) {
-    // May signal a problem! In the mean time, while we don't have a complete wrapping, we'll just
-    // print
-    debugLog(
-      'Detected unexpected changes in target workspace' +
-        Array.from(grouppedChanges.targetWorkspace).join(', '),
-    );
-  }
 }
 
 function groupAllChanges(watchmanResult: WatchmanResult): GrouppedChanges {
   const sourceWorkspaceChanged = new Set();
   const sourceWorkspaceDeleted = new Set();
   const sourceHg = new Set();
-  const targetWorkspace = new Set();
-  const targetHg = new Set();
 
   const classifyAndSet = (fileName, wasDeleted) => {
-    if (fileName.startsWith(MERC_HG_PREFIX)) {
-      targetHg.add(fileName);
-    } else if (fileName.startsWith(MERC_PREFIX)) {
-      targetWorkspace.add(fileName);
-    } else if (fileName.startsWith('.hg')) {
+    if (fileName.startsWith('.hg')) {
       sourceHg.add(fileName);
     } else {
       sourceWorkspaceChanged.add(fileName);
@@ -201,8 +225,6 @@ function groupAllChanges(watchmanResult: WatchmanResult): GrouppedChanges {
     sourceWorkspaceChanged,
     sourceWorkspaceDeleted,
     sourceHg,
-    targetWorkspace,
-    targetHg,
   };
 }
 
@@ -282,21 +304,22 @@ function makeAddFiles(
 
 function makeSyncFiles(
   sourceRepo: string,
-  shadowRepoPath: string,
-  changeSummary: ChangeSummary,
+  targetRepo: string,
+  changes: Set<string>,
+  deletions: Set<string>,
 ): Observable<empty> {
-  const copy = Observable.from(changeSummary.changes)
+  const copy = Observable.from(changes)
     .mergeMap(name => {
       return fsPromise.copy(
         resolve(sourceRepo, name),
-        resolve(shadowRepoPath, name),
+        resolve(targetRepo, name),
       );
     })
     .ignoreElements();
 
-  const unlink = Observable.from(changeSummary.deletions)
+  const unlink = Observable.from(deletions)
     .mergeMap(name => {
-      return fsPromise.unlink(resolve(shadowRepoPath, name));
+      return fsPromise.unlink(resolve(targetRepo, name));
     })
     .ignoreElements();
 

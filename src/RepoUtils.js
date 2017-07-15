@@ -6,7 +6,8 @@
  */
 
 import {Observable} from 'rxjs';
-import {join, resolve} from 'path';
+import {basename, join, resolve} from 'path';
+import {homedir} from 'os';
 import fsPromise from 'nuclide-commons/fsPromise';
 import {pathSetOfFiles} from './PathSetUtils';
 import {
@@ -17,10 +18,8 @@ import {
   setPhase,
 } from './HgUtils';
 
-export const MERC_PREFIX = join('.hg', 'merc');
-
 export function getShadowRepoRoot(repoRoot: string): string {
-  return resolve(repoRoot, MERC_PREFIX);
+  return resolve(homedir(), '.merc', basename(repoRoot));
 }
 
 export function initShadowRepo(
@@ -33,7 +32,7 @@ export function initShadowRepo(
   return initRepo(shadowRoot)
     .concat(copyIfExists(repoPath, shadowRoot, join('.hg', 'hgrc')))
     .concat(mkDirs(shadowRoot, paths))
-    .concat(writeEmptyHgIgnore(shadowRoot))
+    .concat(writeDefaultFiles(shadowRoot))
     .concat(makePublicCommit(shadowRoot, 'Initial commit'))
     .concat(copyHgIgnores(repoPath, shadowRoot, paths))
     .concat(copyBaseFiles(repoPath, shadowRoot, baseFiles))
@@ -59,9 +58,13 @@ function copyIfExists(
     .ignoreElements();
 }
 
-function writeEmptyHgIgnore(targetRepo: string): Observable<empty> {
+function writeDefaultFiles(targetRepo: string): Observable<empty> {
   return Observable.defer(() =>
-    fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
+    // $FlowIgnore - merge on polymorphic types
+    Observable.merge(
+      fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
+      fsPromise.writeFile(resolve(targetRepo, '.arcconfig'), ''),
+    ),
   ).ignoreElements();
 }
 
