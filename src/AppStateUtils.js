@@ -119,5 +119,5 @@ function serialize(state): SerializedAppState {
 }
 
 function getSerializationPath(shadowRepoRoot: string): string {
-  return path.join(shadowRepoRoot, '.mercstate.json');
+  return path.resolve(shadowRepoRoot, '..', '.mercstate.json');
 }
