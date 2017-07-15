@@ -24,6 +24,9 @@ import {initShadowRepo} from './RepoUtils';
 import {Observable} from 'rxjs';
 import {startTrackingChangesForSync, sync, syncTracked} from './sync';
 import {endWatchman} from './watchman';
+import {spawn} from 'nuclide-commons/process';
+
+let commandWasHandled = false;
 
 const trackedSyncState = {
   clock: '',
@@ -136,10 +139,50 @@ yargs
   })
   .help().argv;
 
+// If the command wasn't handled by us, we need to forward it to hg.
+if (!commandWasHandled) {
+  run(
+    getInitializedAppState().switchMap(appState => {
+      const sourceHash = appState.shadowRootSources.get(
+        appState.shadowSubtree.root.hash,
+      );
+      invariant(sourceHash);
+
+      return (
+        // sync(
+        //   appState.sourceRepoRoot,
+        //   appState.shadowSubtree,
+        //   sourceHash,
+        //   appState.shadowIsDirty,
+        //   appState.wClock,
+        // )
+        Observable.of(null)
+          .switchMap(() => {
+            debugLog(`Forwarding hg command: ${yargs.argv._}`);
+            return spawn('hg', yargs.argv._, {
+              stdio: 'inherit',
+              cwd: appState.shadowRepoRoot,
+            })
+              .switchMap(proc =>
+                Observable.fromEvent(proc, 'close').do(exitCode => {
+                  if (exitCode !== 0) {
+                    throw new ForwardedCommandError(exitCode, proc);
+                  }
+                }),
+              )
+              .ignoreElements();
+          })
+          .concat(Observable.of(appState))
+      );
+    }),
+  );
+}
+
 /**
  * Subscribe to the provided observable, and serialize the end state to the disk.
  */
 function run(command: Observable<SerializableAppState>): void {
+  commandWasHandled = true;
   command.switchMap(saveState).finally(() => endWatchman()).subscribe(
     () => {},
     // eslint-disable-next-line no-console
@@ -148,4 +191,15 @@ function run(command: Observable<SerializableAppState>): void {
       debugLog('Done!');
     },
   );
+}
+
+export class ForwardedCommandError extends Error {
+  process: child_process$ChildProcess;
+  exitCode: number;
+  constructor(exitCode: number, proc: child_process$ChildProcess) {
+    super(`Forwarded command failed: ${(proc: any).spawnargs}`);
+    this.process = proc;
+    this.exitCode = exitCode;
+    this.name = this.constructor.name;
+  }
 }
