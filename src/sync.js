@@ -6,7 +6,7 @@
  */
 
 import type {WatchmanResult} from './watchman';
-import type {Subtree} from './types';
+import type {Subtree, SerializableAppState} from './types';
 
 import {Observable} from 'rxjs';
 import {getChanges} from './watchman';
@@ -18,6 +18,7 @@ import {
   add,
   amend,
   copyByCat,
+  getCurrentRevisionHash,
   setPhase,
   shelve,
   unshelve,
@@ -48,16 +49,15 @@ const MERC_HG_PREFIX = resolve(MERC_PREFIX, '.hg');
 
 export function sync(
   sourceRepo: string,
-  rootFiles: Set<string>,
   shadowSubtree: Subtree,
   sourceHash: string,
   isTargetDirty: boolean,
   clock: string,
-): Observable<empty> {
+): Observable<SerializableAppState> {
   const shadowRepoPath = getShadowRepoRoot(sourceRepo);
   return makeChangeSummary(
     sourceRepo,
-    rootFiles,
+    shadowSubtree.initialFiles,
     clock,
   ).switchMap(changeSummary => {
     const {preAdd, postAdd} = manageTargetState(
@@ -65,7 +65,7 @@ export function sync(
       changeSummary,
       isTargetDirty,
     );
-    const addFiles = makeAddFiles(
+    const {addFiles, shadowRootHash} = makeAddFiles(
       sourceRepo,
       shadowRepoPath,
       changeSummary,
@@ -75,7 +75,21 @@ export function sync(
 
     const syncFiles = makeSyncFiles(sourceRepo, shadowRepoPath, changeSummary);
 
-    return Observable.concat(preAdd, addFiles, postAdd, syncFiles);
+    return Observable.concat(
+      preAdd,
+      addFiles,
+      postAdd,
+      syncFiles,
+      shadowRootHash,
+    ).map(shadowHash => {
+      const shadowRootSources = new Map();
+      shadowRootSources.set(shadowHash, sourceHash);
+      return {
+        sourceRepoRoot: sourceRepo,
+        shadowRepoRoot: shadowRepoPath,
+        shadowRootSources,
+      };
+    });
   });
 }
 
@@ -210,9 +224,14 @@ function makeAddFiles(
   changeSummary: ChangeSummary,
   sourceHash: string,
   shadowSubtree: Subtree,
-): Observable<empty> {
+): {addFiles: Observable<empty>, shadowRootHash: Observable<string>} {
+  let newShadowRootHash = shadowSubtree.root.hash;
+  const shadowRootHash = Observable.defer(() =>
+    Observable.of(newShadowRootHash),
+  );
+
   if (changeSummary.newFilesForBase.size === 0) {
-    return Observable.empty();
+    return {addFiles: Observable.empty(), shadowRootHash};
   }
 
   let updateToShadowRoot = Observable.empty();
@@ -240,16 +259,24 @@ function makeAddFiles(
     .concat(amend(shadowRepoPath))
     .concat(setPhase(shadowRepoPath, 'public', '.'))
     .concat(
+      getCurrentRevisionHash(shadowRepoPath)
+        .do(hash => (newShadowRootHash = hash))
+        .ignoreElements(),
+    )
+    .concat(
       Observable.from(childrenCopy).concatMap(commit =>
-        rebase(shadowRepoPath, commit.hash, '.'),
+        rebase(shadowRepoPath, commit.hash, newShadowRootHash),
       ),
     );
 
-  return Observable.concat(
-    updateToShadowRoot,
-    importNewFiles,
-    updateBackToCurrent,
-  );
+  return {
+    addFiles: Observable.concat(
+      updateToShadowRoot,
+      importNewFiles,
+      updateBackToCurrent,
+    ),
+    shadowRootHash,
+  };
 }
 
 function makeSyncFiles(

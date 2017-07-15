@@ -22,6 +22,8 @@ import {
 } from './AppStateUtils';
 import {initShadowRepo} from './RepoUtils';
 import {Observable} from 'rxjs';
+import {sync} from './sync';
+import {endWatchman} from './watchman';
 
 yargs
   .usage('$0 <cmd> [args]')
@@ -96,6 +98,29 @@ yargs
       );
     },
   )
+  .command(
+    'sync',
+    'Sync the changes in the main repo to the shadow one',
+    argv => {
+      debugLog('Syncing stuff');
+      run(
+        getInitializedAppState().switchMap(appState => {
+          const sourceHash = appState.shadowRootSources.get(
+            appState.shadowSubtree.root.hash,
+          );
+          invariant(sourceHash);
+
+          return sync(
+            appState.sourceRepoRoot,
+            appState.shadowSubtree,
+            sourceHash,
+            appState.shadowIsDirty,
+            appState.wClock,
+          );
+        }),
+      );
+    },
+  )
   .command('debug', 'Options: getSubtree', ({argv}) => {
     if (argv._[1] === 'getSubtree') {
       getSubtree(process.cwd()).subscribe(res => dumpSubtree(res));
@@ -107,7 +132,7 @@ yargs
  * Subscribe to the provided observable, and serialize the end state to the disk.
  */
 function run(command: Observable<SerializableAppState>): void {
-  command.switchMap(saveState).subscribe(
+  command.switchMap(saveState).finally(() => endWatchman()).subscribe(
     () => {},
     // eslint-disable-next-line no-console
     err => console.error(err),
