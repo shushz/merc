@@ -21,6 +21,7 @@ import {getClock} from './watchman';
 import fsPromise from 'nuclide-commons/fsPromise';
 import path from 'path';
 import {Observable} from 'rxjs';
+import stringify from 'json-stringify-safe';
 
 export function getUninitializedAppState(): Observable<UninitializedAppState> {
   return discover().map(({serialized, repoRoot, shadowRepoRoot}) => {
@@ -58,7 +59,7 @@ export function getInitializedAppState(): Observable<InitializedAppState> {
       );
     })
     .do(appState => {
-      debugLog('Initial State: ', JSON.stringify(appState));
+      debugLog('Initial State: ', stringify(appState, null, 2));
     });
 }
 
@@ -95,7 +96,7 @@ function loadSerializedState(
       const serialized = JSON.parse(contents);
       invariant(serialized != null);
       invariant(typeof serialized.wClock === 'string');
-      invariant(serialized.shadowRootSources instanceof Map);
+      invariant(Array.isArray(serialized.shadowRootSources));
       return serialized;
     });
 }
