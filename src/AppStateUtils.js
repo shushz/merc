@@ -111,7 +111,7 @@ export function saveState(state: SerializableAppState): Observable<empty> {
         serialized: serialize(finalState),
       }))
       .switchMap(({serializationPath, serialized}) => {
-        const stringified = JSON.stringify(serialized, null, '  ');
+        const stringified = JSON.stringify(serialized, null, 2);
         debugLog('Saving final state:', stringified);
         return fsPromise.writeFile(serializationPath, stringified);
       })
