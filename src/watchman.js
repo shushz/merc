@@ -8,6 +8,7 @@
 import debugLog from './debugLog';
 import {Client} from 'fb-watchman';
 import {Observable} from 'rxjs';
+import {resolve, relative} from 'path';
 
 const client = new Client();
 
@@ -61,30 +62,36 @@ export function getChanges(
           fields: ['new', 'exists', 'name'],
           empty_on_fresh_instance: true,
         },
-      ]),
-    )
-    .map(response => {
-      const clock = response.clock;
-      const overflown = response.is_fresh_instance;
+      ]).map(response => {
+        const clock = response.clock;
+        const overflown = response.is_fresh_instance;
 
-      const filesAdded = new Set();
-      const filesDeleted = new Set();
-      const filesModified = new Set();
+        const filesAdded = new Set();
+        const filesDeleted = new Set();
+        const filesModified = new Set();
 
-      response.files.forEach(file => {
-        if (file.new) {
-          if (file.exists) {
-            filesAdded.add(file.name);
+        response.files.forEach(file => {
+          const absolutePath = resolve(watchDir, file.name);
+
+          if (!absolutePath.startsWith(path)) {
+            return;
           }
-        } else if (file.exists) {
-          filesModified.add(file.name);
-        } else {
-          filesDeleted.add(file.name);
-        }
-      });
 
-      return {clock, overflown, filesAdded, filesDeleted, filesModified};
-    });
+          const name = relative(path, absolutePath);
+          if (file.new) {
+            if (file.exists) {
+              filesAdded.add(name);
+            }
+          } else if (file.exists) {
+            filesModified.add(name);
+          } else {
+            filesDeleted.add(name);
+          }
+        });
+
+        return {clock, overflown, filesAdded, filesDeleted, filesModified};
+      }),
+    );
 }
 
 export function endWatchman(): void {
