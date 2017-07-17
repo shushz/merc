@@ -79,47 +79,55 @@ export function sync(
   clock: string,
 ): Observable<SerializableAppState> {
   const shadowRepoPath = getShadowRepoRoot(sourceRepo);
-  return makeChangeSummary(
-    sourceRepo,
-    shadowSubtree.initialFiles,
-    clock,
-  ).switchMap(changeSummary => {
-    const {preAdd, postAdd} = manageTargetState(
-      shadowRepoPath,
-      changeSummary,
-      isTargetDirty,
-    );
-    const {addFiles, shadowRootHash} = makeAddFiles(
-      sourceRepo,
-      shadowRepoPath,
-      changeSummary,
-      sourceHash,
-      shadowSubtree,
-    );
+  return extendedLocalRoots(sourceRepo, shadowSubtree.initialFiles)
+    .switchMap(rootFiles => makeChangeSummary(sourceRepo, rootFiles, clock))
+    .switchMap(changeSummary => {
+      const {preAdd, postAdd} = manageTargetState(
+        shadowRepoPath,
+        changeSummary,
+        isTargetDirty,
+      );
+      const {addFiles, shadowRootHash} = makeAddFiles(
+        sourceRepo,
+        shadowRepoPath,
+        changeSummary,
+        sourceHash,
+        shadowSubtree,
+      );
 
-    const syncFiles = makeSyncFiles(
-      sourceRepo,
-      shadowRepoPath,
-      changeSummary.changes,
-      changeSummary.deletions,
-    );
+      const syncFiles = makeSyncFiles(
+        sourceRepo,
+        shadowRepoPath,
+        changeSummary.changes,
+        changeSummary.deletions,
+      );
 
-    return Observable.concat(
-      preAdd,
-      addFiles,
-      postAdd,
-      syncFiles,
-      shadowRootHash,
-    ).map(shadowHash => {
-      const shadowRootSources = new Map();
-      shadowRootSources.set(shadowHash, sourceHash);
-      return {
-        sourceRepoRoot: sourceRepo,
-        shadowRepoRoot: shadowRepoPath,
-        shadowRootSources,
-      };
+      return Observable.concat(
+        preAdd,
+        addFiles,
+        postAdd,
+        syncFiles,
+        shadowRootHash,
+      ).map(shadowHash => {
+        const shadowRootSources = new Map();
+        shadowRootSources.set(shadowHash, sourceHash);
+        return {
+          sourceRepoRoot: sourceRepo,
+          shadowRepoRoot: shadowRepoPath,
+          shadowRootSources,
+        };
+      });
     });
-  });
+}
+
+function extendedLocalRoots(
+  sourceRepo: string,
+  initialFiles: Set<string>,
+): Observable<Set<string>> {
+  return hgIgnores(
+    sourceRepo,
+    pathSetOfFiles(initialFiles),
+  ).map(hgignoreFiles => setUnion(initialFiles, hgignoreFiles));
 }
 
 function makeChangeSummary(
@@ -137,6 +145,10 @@ function makeChangeSummary(
         rootFiles,
       );
 
+      if (newFilesForBase.size !== 0) {
+        debugLog('Detected new files for base:', newFilesForBase);
+      }
+
       return {
         newFilesForBase,
         changes: grouppedChanges.sourceWorkspaceChanged,
@@ -150,6 +162,10 @@ function makeChangeSummary(
       )
         .map(hgIgnoreFiles => setDifference(hgIgnoreFiles, rootFiles))
         .map(newHgIgnores => {
+          if (newHgIgnores.size !== 0) {
+            debugLog('Detected new .hgignore files for base:', newHgIgnores);
+          }
+
           return {
             ...changeSummary,
             newFilesForBase: setUnion(
