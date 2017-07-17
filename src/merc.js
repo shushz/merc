@@ -14,7 +14,7 @@ import {dumpSubtree} from './debug';
 import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
-import {bulkMoveSubtree} from './subtree/moveSubtree';
+import {moveSubtree} from './subtree/moveSubtree';
 import {
   getInitializedAppState,
   getUninitializedAppState,
@@ -57,7 +57,7 @@ yargs
                     trackedSyncState,
                   )
                     .concat(
-                      bulkMoveSubtree({
+                      moveSubtree({
                         sourceRepoRoot,
                         sourceRoot,
                         currentHash: sourceSubtree.currentCommit.hash,
@@ -118,7 +118,7 @@ yargs
           return Observable.concat(
             revertFiles(appState.sourceRepoRoot, allFiles),
             purgeFiles(appState.sourceRepoRoot, allFiles),
-            bulkMoveSubtree({
+            moveSubtree({
               sourceRepoRoot: appState.shadowRepoRoot,
               sourceRoot: appState.shadowSubtree.root,
               currentHash: appState.shadowSubtree.currentCommit.hash,
