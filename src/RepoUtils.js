@@ -17,6 +17,7 @@ import {
   initRepo,
   setPhase,
 } from './HgUtils';
+import debugLog from './debugLog';
 
 export function getShadowRepoRoot(repoRoot: string): string {
   return resolve(homedir(), '.merc', basename(repoRoot));
@@ -27,7 +28,9 @@ export function initShadowRepo(
   baseFiles: Set<string>,
 ): Observable<string> {
   const shadowRoot = getShadowRepoRoot(repoPath);
+  debugLog('The shadow repo path for', repoPath, 'is', shadowRoot);
   const paths = pathSetOfFiles(baseFiles);
+  debugLog('The path set of base files is', paths);
 
   return initRepo(shadowRoot)
     .concat(copyIfExists(repoPath, shadowRoot, join('.hg', 'hgrc')))
@@ -51,6 +54,7 @@ function copyIfExists(
   return Observable.defer(() => fsPromise.exists(sourceFileName))
     .switchMap(exists => {
       if (exists) {
+        debugLog(sourceFileName, 'EXISTS, copying to', destFileName);
         return fsPromise.copy(sourceFileName, destFileName);
       }
       return Observable.empty();
@@ -75,6 +79,7 @@ function copyHgIgnores(
 ): Observable<empty> {
   return hgIgnores(sourceRepo, paths)
     .switchMap(ignores => {
+      debugLog('Copying .hgignore files', ignores);
       return Observable.from(ignores).mergeMap(name =>
         copyIfExists(sourceRepo, targetRepo, name),
       );
@@ -88,7 +93,7 @@ export function hgIgnores(
 ): Observable<Set<string>> {
   return Observable.from(paths)
     .mergeMap(async path => {
-      const name = resolve(path, '.hgignore');
+      const name = join(path, '.hgignore');
       const exists = await fsPromise.exists(resolve(root, name));
       return {name, exists};
     })
@@ -121,6 +126,7 @@ function copyBaseFiles(
   baseFiles: Set<string>,
 ): Observable<empty> {
   const files = new Set(baseFiles);
+  debugLog('Copying base files:', baseFiles);
   // In case we are in an empty branch, default to at least one files that's likely to exist
   if (files.size === 0) {
     files.add('.arcconfig');
