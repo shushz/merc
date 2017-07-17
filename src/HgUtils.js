@@ -120,6 +120,18 @@ export function transplant(
     .ignoreElements();
 }
 
+export function transplantBulk(
+  sourceRepoRoot: string,
+  sourceHashes: Array<string>,
+  destRepoRoot: string,
+): Observable<empty> {
+  return hg('export', ['-r', sourceHashes.join(' + ')], {
+    cwd: sourceRepoRoot,
+  })
+    .concatMap(patch => hg('import', ['-'], {input: patch, cwd: destRepoRoot}))
+    .ignoreElements();
+}
+
 export function strip(repoRoot: string, hash: string): Observable<empty> {
   // Fake for now so we don't accidentally mess things up.
   return Observable.defer(() => {
@@ -169,4 +181,18 @@ export function revertAll(repoRoot: string): Observable<empty> {
 
 export function purge(repoRoot: string): Observable<empty> {
   return hg('purge', ['.'], {cwd: repoRoot}).ignoreElements();
+}
+
+export function revertFiles(
+  repoRoot: string,
+  files: Set<string>,
+): Observable<empty> {
+  return hg('revert', Array.from(files), {cwd: repoRoot}).ignoreElements();
+}
+
+export function purgeFiles(
+  repoRoot: string,
+  files: Set<string>,
+): Observable<empty> {
+  return hg('purge', Array.from(files), {cwd: repoRoot}).ignoreElements();
 }

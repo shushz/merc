@@ -9,12 +9,12 @@ import type {SerializableAppState} from './types';
 
 import invariant from 'assert';
 import yargs from 'yargs';
-import {purge, revertAll, update} from './HgUtils';
+import {purgeFiles, revertFiles, update} from './HgUtils';
 import {dumpSubtree} from './debug';
 import debugLog from './debugLog';
 import getFileDependencies from './subtree/getFileDependencies';
 import getSubtree from './subtree/getSubtree';
-import {moveSubtree} from './subtree/moveSubtree';
+import {bulkMoveSubtree} from './subtree/moveSubtree';
 import {
   getInitializedAppState,
   getUninitializedAppState,
@@ -25,6 +25,7 @@ import {Observable} from 'rxjs';
 import {startTrackingChangesForSync, sync, syncTracked} from './sync';
 import {endWatchman} from './watchman';
 import {spawn} from 'nuclide-commons/process';
+import {dfs} from './TreeUtils';
 
 let commandWasHandled = false;
 
@@ -56,7 +57,7 @@ yargs
                     trackedSyncState,
                   )
                     .concat(
-                      moveSubtree({
+                      bulkMoveSubtree({
                         sourceRepoRoot,
                         sourceRoot,
                         currentHash: sourceSubtree.currentCommit.hash,
@@ -97,15 +98,27 @@ yargs
           const {sourceRepoRoot} = appState;
           debugLog('Repo root is: ', sourceRepoRoot);
           const shadowRoot = appState.shadowSubtree.root;
+          const allFiles = new Set();
+          for (const node of dfs(appState.shadowSubtree.root)) {
+            if (node.phase !== 'public') {
+              node.addedFiles.forEach(f => allFiles.add(f));
+              node.deletedFiles.forEach(f => allFiles.add(f));
+              node.modifiedFiles.forEach(f => allFiles.add(f));
+              node.copiedFiles.forEach(c => {
+                allFiles.add(c.source);
+                allFiles.add(c.dest);
+              });
+            }
+          }
           const shadowRootHash = shadowRoot.hash;
           const mainRootHash = appState.shadowRootSources.get(shadowRootHash);
           invariant(mainRootHash != null);
 
           // Move the shadow repo back to the main one.
           return Observable.concat(
-            revertAll(appState.sourceRepoRoot),
-            purge(appState.sourceRepoRoot),
-            moveSubtree({
+            revertFiles(appState.sourceRepoRoot, allFiles),
+            purgeFiles(appState.sourceRepoRoot, allFiles),
+            bulkMoveSubtree({
               sourceRepoRoot: appState.shadowRepoRoot,
               sourceRoot: appState.shadowSubtree.root,
               currentHash: appState.shadowSubtree.currentCommit.hash,
@@ -175,7 +188,7 @@ if (!commandWasHandled) {
         appState.wClock,
       ).switchMap(newState => {
         const args = process.argv.slice(2);
-        debugLog(`Forwarding hg command: ${args}`);
+        debugLog(`Forwarding hg command: ${args.join(' ')}`);
         return startTrackingChangesForSync(shadowRepoRoot, trackedSyncState)
           .concat(
             spawn('hg', args, {

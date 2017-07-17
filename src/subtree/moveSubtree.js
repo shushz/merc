@@ -8,9 +8,17 @@
 import type {CommitNode} from '../types';
 
 import debugLog from '../debugLog';
-import {getCurrentRevisionHash, strip, transplant, update} from '../HgUtils';
+import {
+  getCurrentRevisionHash,
+  strip,
+  transplant,
+  transplantBulk,
+  update,
+} from '../HgUtils';
 import {dfs} from '../TreeUtils';
 import {Observable} from 'rxjs';
+import {getPathToCurrentFromNode, getByPathFromRootNode} from './SubtreePath';
+import getSubtree from './getSubtree';
 
 type MoveSubtreeOptions = {|
   sourceRepoRoot: string,
@@ -82,6 +90,42 @@ export function moveSubtree(
       .ignoreElements()
       .concat(Observable.of(shadowRoot)),
   );
+}
+
+export function bulkMoveSubtree(
+  options: MoveSubtreeOptions,
+): Observable<CommitNode> {
+  const {sourceRepoRoot, sourceRoot, currentHash, destRepoRoot} = options;
+
+  const sourceHashesToMove = [];
+  let currentSourceNode = sourceRoot;
+  for (const node of dfs(sourceRoot)) {
+    if (node.phase !== 'public') {
+      sourceHashesToMove.push(node.hash);
+    }
+
+    if (node.hash === currentHash) {
+      currentSourceNode = node;
+    }
+  }
+  const pathToCurrentNode = getPathToCurrentFromNode(currentSourceNode);
+
+  return Observable.defer(() => {
+    debugLog('Bulk-moving subtree');
+
+    return transplantBulk(sourceRepoRoot, sourceHashesToMove, destRepoRoot)
+      .concat(getSubtree(destRepoRoot))
+      .switchMap(shadowSubtree => {
+        const newCurrent = getByPathFromRootNode(
+          shadowSubtree.root,
+          pathToCurrentNode,
+        );
+
+        return update(destRepoRoot, newCurrent.hash).concat(
+          Observable.of(shadowSubtree.root),
+        );
+      });
+  });
 }
 
 function createShadowCommitNode(

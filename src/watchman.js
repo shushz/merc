@@ -53,6 +53,7 @@ export function getClockVerify(repoRoot: string): Observable<string> {
   return runCommand(['watch-project', repoRoot]).switchMap(response => {
     return subscribe(response.watch, fileName)
       .switchMap(obs =>
+        // $FlowIgnore
         Observable.merge(
           obs,
           Observable.defer(() =>

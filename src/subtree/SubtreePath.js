@@ -11,9 +11,12 @@ import invariant from 'assert';
 export type SubtreePath = Array<number>;
 
 export function getPathToCurrent(subtree: Subtree): SubtreePath {
-  const subtreePath = [];
-  let current = subtree.currentCommit;
+  return getPathToCurrentFromNode(subtree.currentCommit);
+}
 
+export function getPathToCurrentFromNode(node: CommitNode): SubtreePath {
+  let current = node;
+  const subtreePath = [];
   while (current.parent != null) {
     invariant(current);
     const myIndex = current.parent.children.indexOf(current);
@@ -30,7 +33,14 @@ export function getByPath(
   subtree: Subtree,
   subtreePath: SubtreePath,
 ): CommitNode {
-  let current = subtree.root;
+  return getByPathFromRootNode(subtree.root, subtreePath);
+}
+
+export function getByPathFromRootNode(
+  root: CommitNode,
+  subtreePath: SubtreePath,
+): CommitNode {
+  let current = root;
 
   subtreePath.forEach(index => {
     current = current.children[index];
