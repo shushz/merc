@@ -105,7 +105,9 @@ export function setPhase(
 }
 
 export function isDirty(repoRoot: string): Observable<boolean> {
-  return hg('status', [], {cwd: repoRoot}).map(stdout => stdout.trim() !== '');
+  return hg('status', ['-mard'], {cwd: repoRoot}).map(
+    stdout => stdout.trim() !== '',
+  );
 }
 
 export function transplant(
