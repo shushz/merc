@@ -59,7 +59,20 @@ export function getInitializedAppState(): Observable<InitializedAppState> {
       );
     })
     .do(appState => {
-      debugLog('Initial State: ', stringify(appState, null, 2));
+      debugLog(
+        'Initial State: ',
+        stringify(
+          appState,
+          (key, val) => {
+            if (val instanceof Set) {
+              return Array.from(val);
+            }
+
+            return val;
+          },
+          2,
+        ),
+      );
     });
 }
 
