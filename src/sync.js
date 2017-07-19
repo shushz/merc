@@ -80,7 +80,9 @@ export function sync(
 ): Observable<SerializableAppState> {
   const shadowRepoPath = getShadowRepoRoot(sourceRepo);
   return extendedLocalRoots(sourceRepo, shadowSubtree.initialFiles)
-    .switchMap(rootFiles => makeChangeSummary(sourceRepo, rootFiles, clock))
+    .switchMap(rootFiles =>
+      makeChangeSummary(sourceRepo, shadowRepoPath, rootFiles, clock),
+    )
     .switchMap(changeSummary => {
       const {preAdd, postAdd} = manageTargetState(
         shadowRepoPath,
@@ -132,6 +134,7 @@ function extendedLocalRoots(
 
 function makeChangeSummary(
   sourceRepo: string,
+  shadowRepoPath: string,
   rootFiles: Set<string>,
   clock: string,
 ): Observable<ChangeSummary> {
@@ -156,6 +159,19 @@ function makeChangeSummary(
       };
     })
     .switchMap(changeSummary => {
+      // $FlowIgnore - flow does not understand that .mapping to a set is not .mapping to its elements
+      return retainOnlyNonExisting(
+        shadowRepoPath,
+        changeSummary.newFilesForBase,
+      ).map(newFilesForBase => {
+        return {
+          newFilesForBase,
+          changes: changeSummary.changes,
+          deletions: changeSummary.deletions,
+        };
+      });
+    })
+    .switchMap(changeSummary => {
       return hgIgnores(
         sourceRepo,
         pathSetOfFiles(changeSummary.newFilesForBase),
@@ -175,6 +191,27 @@ function makeChangeSummary(
           };
         });
     });
+}
+
+function retainOnlyNonExisting(
+  shadowRepoPath: string,
+  files: Set<string>,
+): Observable<string> {
+  const arrFiles = Array.from(files);
+  return Observable.defer(() =>
+    Promise.all(arrFiles.map(fsPromise.exists)),
+  ).map(arrExists => {
+    const filesThatDoNotExist: Set<string> = new Set();
+
+    arrExists.forEach((exists, index) => {
+      if (!exists) {
+        filesThatDoNotExist.add(arrFiles[index]);
+      }
+    });
+
+    // $FlowIgnore - flow does not understand that .mapping to a set is not .mapping to its elements
+    return filesThatDoNotExist;
+  });
 }
 
 function makeTrackedSyncSummary(
