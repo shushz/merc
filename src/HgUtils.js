@@ -45,22 +45,24 @@ function hg(
 
 export function getRepoRoot(dir_?: string): Observable<string> {
   const dir = dir_ || process.cwd();
-  return hg('root', [], {cwd: dir}).map(out => out.trim());
+  return hg('root', [], {cwd: dir})
+    .map(out => out.trim())
+    .do(val => debugLog('Result:', val));
 }
 
 export function getCurrentRevisionHash(repoRoot: string): Observable<string> {
-  return log(repoRoot, '.', '{node}').map(out => out.trim());
+  return log(repoRoot, '.', '{node}')
+    .map(out => out.trim())
+    .do(val => debugLog('Result:', val));
 }
 
 export function getMergeBaseHash(
   repoRoot: string,
   hash: string = '.',
 ): Observable<string> {
-  return log(
-    repoRoot,
-    `last(public() and ancestors(${hash}))`,
-    '{node}',
-  ).map(out => out.trim());
+  return log(repoRoot, `last(public() and ancestors(${hash}))`, '{node}')
+    .map(out => out.trim())
+    .do(val => debugLog('Result:', val));
 }
 
 export function initRepo(root: string): Observable<empty> {
@@ -105,9 +107,9 @@ export function setPhase(
 }
 
 export function isDirty(repoRoot: string): Observable<boolean> {
-  return hg('status', ['-mard'], {cwd: repoRoot}).map(
-    stdout => stdout.trim() !== '',
-  );
+  return hg('status', ['-mard'], {cwd: repoRoot})
+    .map(stdout => stdout.trim() !== '')
+    .do(val => debugLog('Result:', val));
 }
 
 export function transplant(
