@@ -200,9 +200,10 @@ if (!commandWasHandled) {
           .switchMap(proc =>
             Observable.fromEvent(proc, 'close')
               .do(exitCode => {
-                if (exitCode !== 0) {
-                  throw new ForwardedCommandError(exitCode, proc);
-                }
+                process.exitCode = exitCode;
+                // if (exitCode !== 0) {
+                //   throw new ForwardedCommandError(exitCode, proc);
+                // }
               })
               .take(1),
           )
@@ -231,7 +232,7 @@ function run(command: Observable<SerializableAppState>): void {
     // eslint-disable-next-line no-console
     err => console.error(err),
     () => {
-      debugLog('Done!');
+      debugLog(`Done! (${String(process.exitCode)})`);
     },
   );
 }
