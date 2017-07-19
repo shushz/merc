@@ -26,6 +26,7 @@ import {startTrackingChangesForSync, sync, syncTracked} from './sync';
 import {endWatchman} from './watchman';
 import {spawn} from 'nuclide-commons/process';
 import {dfs} from './TreeUtils';
+import {lock, unlock} from './LockfileUtils';
 
 let commandWasHandled = false;
 
@@ -227,14 +228,17 @@ if (!commandWasHandled) {
  */
 function run(command: Observable<SerializableAppState>): void {
   commandWasHandled = true;
-  command.switchMap(saveState).finally(() => endWatchman()).subscribe(
-    () => {},
-    // eslint-disable-next-line no-console
-    err => console.error(err),
-    () => {
-      debugLog(`Done! (${String(process.exitCode)})`);
-    },
-  );
+  lock()
+    .concat(command.switchMap(saveState).finally(() => endWatchman()))
+    .concat(unlock())
+    .subscribe(
+      () => {},
+      // eslint-disable-next-line no-console
+      err => console.error(err),
+      () => {
+        debugLog(`Done! (${String(process.exitCode)})`);
+      },
+    );
 }
 
 export class ForwardedCommandError extends Error {
