@@ -117,7 +117,7 @@ function loadSerializedState(
 export function saveState(state: SerializableAppState): Observable<empty> {
   const {shadowRepoRoot, sourceRepoRoot} = state;
   return (
-    getClockVerify(sourceRepoRoot)
+    getClockVerify(sourceRepoRoot, shadowRepoRoot)
       // Update the clock.
       .map(wClock => ({...state, wClock}))
       .map(finalState => ({

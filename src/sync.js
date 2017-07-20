@@ -27,6 +27,7 @@ import {
 } from './HgUtils';
 import {getPathToCurrent, getByPath} from './subtree/SubtreePath';
 import getSubtree from './subtree/getSubtree';
+import {spawn} from 'nuclide-commons/process';
 
 import {
   concatIterators,
@@ -66,8 +67,22 @@ export function syncTracked(
 ): Observable<empty> {
   return Observable.defer(() =>
     makeTrackedSyncSummary(sourceRepo, state.clock),
-  ).switchMap(({changes, deletions}) => {
-    return makeSyncFiles(sourceRepo, targetRepo, changes, deletions);
+  ).switchMap(({changes, deletions, toTouchIfPresent}) => {
+    debugLog(
+      'Will sync back changes:',
+      changes,
+      'deletions:',
+      deletions,
+      'touches',
+      toTouchIfPresent,
+    );
+    return makeSyncFiles(
+      sourceRepo,
+      targetRepo,
+      changes,
+      deletions,
+      toTouchIfPresent,
+    );
   });
 }
 
@@ -102,6 +117,7 @@ export function sync(
         shadowRepoPath,
         changeSummary.changes,
         changeSummary.deletions,
+        new Set(),
       );
 
       return Observable.concat(
@@ -217,10 +233,16 @@ function retainOnlyNonExisting(
 function makeTrackedSyncSummary(
   sourceRepo: string,
   clock: string,
-): Observable<{changes: Set<string>, deletions: Set<string>}> {
+): Observable<{
+  changes: Set<string>,
+  deletions: Set<string>,
+  toTouchIfPresent: Set<string>,
+}> {
   return getChanges(sourceRepo, clock).map(watchmanResult => {
     const filterOutHg = iterable =>
       filterIterable(iterable, name => !name.startsWith('.hg'));
+    const filterToHg = iterable =>
+      filterIterable(iterable, name => name.startsWith('.hg'));
     const changes = new Set(
       concatIterators(
         filterOutHg(watchmanResult.filesAdded),
@@ -228,8 +250,15 @@ function makeTrackedSyncSummary(
       ),
     );
 
+    const toTouchIfPresent = new Set(
+      concatIterators(
+        filterToHg(watchmanResult.filesAdded),
+        filterToHg(watchmanResult.filesModified),
+      ),
+    );
+
     const deletions = new Set(filterOutHg(watchmanResult.filesDeleted));
-    return {changes, deletions};
+    return {changes, deletions, toTouchIfPresent};
   });
 }
 
@@ -322,7 +351,6 @@ function makeAddFiles(
   }
 
   const childrenCopy = shadowSubtree.root.children.slice();
-  childrenCopy.reverse();
 
   const dirnames = new Set();
   changeSummary.newFilesForBase.forEach(fileName =>
@@ -372,6 +400,7 @@ function makeSyncFiles(
   targetRepo: string,
   changes: Set<string>,
   deletions: Set<string>,
+  toTouchIfPresent: Set<string>,
 ): Observable<empty> {
   const copy = Observable.from(changes)
     .mergeMap(async name => {
@@ -394,5 +423,17 @@ function makeSyncFiles(
     })
     .ignoreElements();
 
-  return Observable.merge(copy, unlink);
+  const touch = Observable.from(toTouchIfPresent)
+    .mergeMap(async name => {
+      const exists = await fsPromise.exists(resolve(targetRepo, name));
+      if (exists) {
+        return spawn('touch', [resolve(targetRepo, name)], {
+          stdio: 'inherit',
+          cwd: targetRepo,
+        }).toPromise();
+      }
+    })
+    .ignoreElements();
+
+  return Observable.merge(copy, unlink, touch);
 }

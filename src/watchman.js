@@ -47,10 +47,13 @@ export function getClock(repoRoot: string): Observable<string> {
     .map(response => ((response: any): WatchmanClockResponse).clock);
 }
 
-export function getClockVerify(repoRoot: string): Observable<string> {
+export function getClockVerify(
+  repoRoot: string,
+  shadowRepo: string,
+): Observable<string> {
   const fileName = '__some__very__arbitrary__file__name__';
-  const testFile = resolve(repoRoot, fileName);
-  return runCommand(['watch-project', repoRoot]).switchMap(response => {
+  const testFile = resolve(shadowRepo, fileName);
+  return runCommand(['watch-project', shadowRepo]).switchMap(response => {
     return subscribe(response.watch, fileName)
       .switchMap(obs =>
         // $FlowIgnore
@@ -68,9 +71,7 @@ export function getClockVerify(repoRoot: string): Observable<string> {
         }
         return testedFile != null && testedFile.exists === false;
       })
-      .map(res => {
-        return res.files.find(file => file.name === fileName).oclock;
-      })
+      .switchMap(() => getClock(repoRoot))
       .take(1)
       .switchMap(clock => {
         return runCommand([
