@@ -10,7 +10,7 @@ import type {Subtree, SerializableAppState} from './types';
 
 import {Observable} from 'rxjs';
 import {getChanges, getClock} from './watchman';
-import {resolve, relative} from 'path';
+import {dirname, resolve, relative} from 'path';
 import debugLog from './debugLog';
 import {hgIgnores, getShadowRepoRoot} from './RepoUtils';
 import {pathSetOfFiles} from './PathSetUtils';
@@ -324,6 +324,17 @@ function makeAddFiles(
   const childrenCopy = shadowSubtree.root.children.slice();
   childrenCopy.reverse();
 
+  const dirnames = new Set();
+  changeSummary.newFilesForBase.forEach(fileName =>
+    dirnames.add(resolve(shadowRepoPath, dirname(fileName))),
+  );
+
+  debugLog('Will create directories:', dirnames);
+
+  const makeDirsForNewFiles = Observable.from(dirnames)
+    .switchMap(fsPromise.mkdirp)
+    .ignoreElements();
+
   const importNewFiles = copyByCat(
     sourceRepo,
     sourceHash,
@@ -348,6 +359,7 @@ function makeAddFiles(
   return {
     addFiles: Observable.concat(
       updateToShadowRoot,
+      makeDirsForNewFiles,
       importNewFiles,
       updateBackToCurrent,
     ),
@@ -362,17 +374,23 @@ function makeSyncFiles(
   deletions: Set<string>,
 ): Observable<empty> {
   const copy = Observable.from(changes)
-    .mergeMap(name => {
-      return fsPromise.copy(
-        resolve(sourceRepo, name),
-        resolve(targetRepo, name),
-      );
+    .mergeMap(async name => {
+      const exists = await fsPromise.exists(resolve(sourceRepo, name));
+      if (exists) {
+        return fsPromise.copy(
+          resolve(sourceRepo, name),
+          resolve(targetRepo, name),
+        );
+      }
     })
     .ignoreElements();
 
   const unlink = Observable.from(deletions)
-    .mergeMap(name => {
-      return fsPromise.unlink(resolve(targetRepo, name));
+    .mergeMap(async name => {
+      const exists = await fsPromise.exists(resolve(targetRepo, name));
+      if (exists) {
+        return fsPromise.unlink(resolve(targetRepo, name));
+      }
     })
     .ignoreElements();
 
