@@ -226,7 +226,7 @@ function retainOnlyNonExisting(
     });
 
     // $FlowIgnore - flow does not understand that .mapping to a set is not .mapping to its elements
-    return filesThatDoNotExist;
+    return setDifference(files, filesThatDoNotExist);
   });
 }
 
