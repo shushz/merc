@@ -215,7 +215,11 @@ function retainOnlyNonExisting(
 ): Observable<string> {
   const arrFiles = Array.from(files);
   return Observable.defer(() =>
-    Promise.all(arrFiles.map(fsPromise.exists)),
+    Promise.all(
+      arrFiles.map(name => {
+        return fsPromise.exists(resolve(shadowRepoPath, name));
+      }),
+    ),
   ).map(arrExists => {
     const filesThatDoNotExist: Set<string> = new Set();
 
@@ -226,7 +230,7 @@ function retainOnlyNonExisting(
     });
 
     // $FlowIgnore - flow does not understand that .mapping to a set is not .mapping to its elements
-    return setDifference(files, filesThatDoNotExist);
+    return filesThatDoNotExist;
   });
 }
 
@@ -334,6 +338,8 @@ function makeAddFiles(
     Observable.of(newShadowRootHash),
   );
 
+  debugLog('Making addFiles for', changeSummary.newFilesForBase);
+
   if (changeSummary.newFilesForBase.size === 0) {
     return {addFiles: Observable.empty(), shadowRootHash};
   }
@@ -402,6 +408,7 @@ function makeSyncFiles(
   deletions: Set<string>,
   toTouchIfPresent: Set<string>,
 ): Observable<empty> {
+  debugLog('makeSyncFiles copying', changes, 'deleting', deletions);
   const copy = Observable.from(changes)
     .mergeMap(async name => {
       const exists = await fsPromise.exists(resolve(sourceRepo, name));
