@@ -67,6 +67,7 @@ function writeDefaultFiles(targetRepo: string): Observable<empty> {
     // $FlowIgnore - merge on polymorphic types
     Observable.merge(
       fsPromise.writeFile(resolve(targetRepo, '.hgignore'), ''),
+      fsPromise.writeFile(resolve(targetRepo, '.watchmanconfig'), ''),
       fsPromise.writeFile(resolve(targetRepo, '.arcconfig'), ''),
     ),
   ).ignoreElements();
